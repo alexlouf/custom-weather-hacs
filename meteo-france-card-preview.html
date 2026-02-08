@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Météo France Card — Aperçu</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #f0f2f5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 16px;
+      gap: 32px;
+    }
+
+    h1 {
+      font-size: 1.5em;
+      font-weight: 600;
+      color: #1a1a2e;
+      text-align: center;
+    }
+
+    h1 span {
+      display: block;
+      font-size: 0.55em;
+      font-weight: 400;
+      color: #888;
+      margin-top: 4px;
+    }
+
+    .preview-wrapper {
+      display: flex;
+      gap: 32px;
+      flex-wrap: wrap;
+      justify-content: center;
+      max-width: 900px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04);
+      width: 380px;
+      overflow: hidden;
+    }
+
+    .card.dark {
+      background: #1c1c2e;
+      color: #e0e0e0;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+    }
+
+    /* Header */
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 16px 8px;
+    }
+    .header-title { font-size: 1.1em; font-weight: 600; }
+    .dark .header-title { color: #e8e8f0; }
+    .header-subtitle {
+      font-size: 0.75em; font-weight: 500;
+      color: #03A9F4; text-transform: uppercase;
+      letter-spacing: 0.5px; opacity: 0.9;
+    }
+
+    /* Alerts */
+    .alerts-section { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 16px 8px; }
+    .alert-chip {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 4px 10px; border-radius: 16px;
+      font-size: 0.75em; font-weight: 500;
+    }
+    .alert-chip.orange {
+      background: rgba(255, 152, 0, 0.12); color: #FF9800;
+      border: 1px solid rgba(255, 152, 0, 0.25);
+    }
+    .alert-chip.yellow {
+      background: rgba(255, 193, 7, 0.12); color: #F9A825;
+      border: 1px solid rgba(255, 193, 7, 0.25);
+    }
+    .alert-chip svg { width: 14px; height: 14px; fill: currentColor; }
+    .alert-level { font-weight: 700; }
+
+    /* Current */
+    .current-section {
+      padding: 8px 16px 16px;
+      display: flex; align-items: center; gap: 16px;
+    }
+    .current-main { display: flex; align-items: center; gap: 12px; }
+    .current-icon { font-size: 48px; }
+    .current-temp { display: flex; align-items: flex-start; }
+    .temp-value {
+      font-size: 3.2em; font-weight: 300; line-height: 1;
+    }
+    .dark .temp-value { color: #f0f0f8; }
+    .temp-unit { font-size: 1.2em; color: #888; margin-top: 6px; margin-left: 2px; }
+    .current-info { flex: 1; text-align: right; }
+    .condition-label { font-size: 1em; font-weight: 500; }
+    .dark .condition-label { color: #d0d0e0; }
+    .apparent-temp { font-size: 0.85em; color: #888; margin-top: 2px; }
+
+    /* Details */
+    .details-section { padding: 0 16px 12px; }
+    .details-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .detail-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 8px; border-radius: 8px;
+      background: rgba(0,0,0,0.03);
+    }
+    .dark .detail-item { background: rgba(255,255,255,0.05); }
+    .detail-icon { font-size: 16px; color: #888; flex-shrink: 0; width: 20px; text-align: center; }
+    .detail-content { display: flex; flex-direction: column; }
+    .detail-label {
+      font-size: 0.68em; color: #888; text-transform: uppercase; letter-spacing: 0.3px;
+    }
+    .detail-value { font-size: 0.85em; font-weight: 500; }
+    .dark .detail-value { color: #d0d0e0; }
+
+    /* Section titles */
+    .section-title {
+      display: flex; align-items: center; gap: 6px;
+      padding-bottom: 8px; font-size: 0.85em; font-weight: 600; color: #888;
+    }
+    .section-title svg { width: 18px; height: 18px; fill: #888; }
+    .section-time { margin-left: auto; font-weight: 400; font-size: 0.9em; opacity: 0.7; }
+
+    /* Rain forecast */
+    .rain-section {
+      padding: 12px 16px; margin: 0 12px 12px;
+      border-radius: 12px;
+      background: rgba(3, 169, 244, 0.06);
+      border: 1px solid rgba(3, 169, 244, 0.12);
+    }
+    .dark .rain-section {
+      background: rgba(3, 169, 244, 0.08);
+      border-color: rgba(3, 169, 244, 0.15);
+    }
+    .rain-status { font-size: 0.85em; font-weight: 500; margin-bottom: 10px; }
+    .rain-status.no-rain { color: #4CAF50; }
+    .rain-status.has-rain { color: #FF9800; }
+    .rain-bars {
+      display: flex; gap: 2px; height: 60px; align-items: flex-end; padding: 0 4px;
+    }
+    .rain-bar-container {
+      flex: 1; height: 100%; display: flex; align-items: flex-end;
+    }
+    .rain-bar {
+      width: 100%; border-radius: 3px 3px 0 0;
+      transition: height 0.6s ease, background 0.3s ease;
+      min-height: 4px;
+    }
+    .rain-time-labels {
+      display: flex; justify-content: space-between;
+      padding: 6px 0 0; font-size: 0.65em; color: #aaa;
+      border-top: 1px solid rgba(0,0,0,0.06); margin-top: 4px;
+    }
+    .dark .rain-time-labels { border-top-color: rgba(255,255,255,0.06); }
+    .rain-legend {
+      display: flex; justify-content: center;
+      gap: 12px; font-size: 0.7em; color: #aaa; margin-top: 6px;
+    }
+    .legend-item { display: flex; align-items: center; gap: 4px; }
+    .legend-dot { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+
+    /* Hourly */
+    .hourly-section {
+      padding: 12px 16px;
+      border-top: 1px solid rgba(0,0,0,0.06);
+    }
+    .dark .hourly-section { border-top-color: rgba(255,255,255,0.06); }
+    .hourly-scroll { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 4px; }
+    .hourly-item {
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      min-width: 56px; padding: 8px 6px; border-radius: 10px;
+      background: rgba(0,0,0,0.025); flex-shrink: 0;
+    }
+    .dark .hourly-item { background: rgba(255,255,255,0.04); }
+    .hourly-time { font-size: 0.72em; font-weight: 500; color: #888; }
+    .hourly-icon { font-size: 22px; }
+    .hourly-temp { font-size: 0.9em; font-weight: 600; }
+    .dark .hourly-temp { color: #d0d0e0; }
+    .hourly-precip { font-size: 0.65em; color: #888; }
+
+    /* Daily */
+    .daily-section {
+      padding: 12px 16px 16px;
+      border-top: 1px solid rgba(0,0,0,0.06);
+    }
+    .dark .daily-section { border-top-color: rgba(255,255,255,0.06); }
+    .daily-item {
+      display: flex; align-items: center; gap: 8px; padding: 7px 0;
+    }
+    .daily-item:not(:last-child) {
+      border-bottom: 1px solid rgba(0,0,0,0.04);
+    }
+    .dark .daily-item:not(:last-child) {
+      border-bottom-color: rgba(255,255,255,0.04);
+    }
+    .daily-day {
+      font-size: 0.85em; font-weight: 500; width: 80px; flex-shrink: 0;
+    }
+    .dark .daily-day { color: #d0d0e0; }
+    .daily-icon { font-size: 20px; }
+    .daily-precip {
+      font-size: 0.75em; color: #888; width: 48px; flex-shrink: 0;
+    }
+    .daily-temps {
+      margin-left: auto; display: flex; gap: 6px; font-size: 0.9em; flex-shrink: 0;
+    }
+    .daily-high { font-weight: 600; width: 32px; text-align: right; }
+    .dark .daily-high { color: #e0e0e8; }
+    .daily-low { font-weight: 400; color: #888; width: 32px; text-align: right; }
+
+    /* Animations */
+    @keyframes barGrow {
+      from { height: 0; }
+    }
+    .rain-bar {
+      animation: barGrow 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+    .rain-bar-container:nth-child(1) .rain-bar { animation-delay: 0.0s; }
+    .rain-bar-container:nth-child(2) .rain-bar { animation-delay: 0.03s; }
+    .rain-bar-container:nth-child(3) .rain-bar { animation-delay: 0.06s; }
+    .rain-bar-container:nth-child(4) .rain-bar { animation-delay: 0.09s; }
+    .rain-bar-container:nth-child(5) .rain-bar { animation-delay: 0.12s; }
+    .rain-bar-container:nth-child(6) .rain-bar { animation-delay: 0.15s; }
+    .rain-bar-container:nth-child(7) .rain-bar { animation-delay: 0.18s; }
+    .rain-bar-container:nth-child(8) .rain-bar { animation-delay: 0.21s; }
+    .rain-bar-container:nth-child(9) .rain-bar { animation-delay: 0.24s; }
+    .rain-bar-container:nth-child(10) .rain-bar { animation-delay: 0.27s; }
+    .rain-bar-container:nth-child(11) .rain-bar { animation-delay: 0.30s; }
+    .rain-bar-container:nth-child(12) .rain-bar { animation-delay: 0.33s; }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .card > * {
+      animation: fadeInUp 0.4s ease-out forwards;
+      opacity: 0;
+    }
+    .card > *:nth-child(1) { animation-delay: 0.0s; }
+    .card > *:nth-child(2) { animation-delay: 0.05s; }
+    .card > *:nth-child(3) { animation-delay: 0.1s; }
+    .card > *:nth-child(4) { animation-delay: 0.15s; }
+    .card > *:nth-child(5) { animation-delay: 0.2s; }
+    .card > *:nth-child(6) { animation-delay: 0.25s; }
+    .card > *:nth-child(7) { animation-delay: 0.3s; }
+    .card > *:nth-child(8) { animation-delay: 0.35s; }
+
+    .theme-label {
+      font-size: 0.75em;
+      color: #aaa;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: -16px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>
+    🌦️ Carte Météo France
+    <span>Plugin HACS pour Home Assistant — Aperçu</span>
+  </h1>
+
+  <div class="preview-wrapper">
+
+    <!-- LIGHT THEME CARD -->
+    <div>
+      <div class="theme-label">☀️ Thème clair</div>
+      <div class="card" style="margin-top: 24px;">
+        <!-- Header -->
+        <div class="card-header">
+          <span class="header-title">Guyancourt</span>
+          <span class="header-subtitle">Météo-France</span>
+        </div>
+
+        <!-- Alerts -->
+        <div class="alerts-section">
+          <div class="alert-chip orange">
+            <svg viewBox="0 0 24 24"><path d="M13 3.5L1.5 21h21L13 3.5zm0 3.31L19.13 19H6.87L13 6.81zM12 16h2v2h-2v-2zm0-6h2v4h-2v-4z"/></svg>
+            <span>Orages</span>
+            <span class="alert-level">Orange</span>
+          </div>
+          <div class="alert-chip yellow">
+            <svg viewBox="0 0 24 24"><path d="M6 6h12v2.59l-4-4V12H8V4.59l-4 4V6zm12 12H6v-2.59l4 4V12h4v7.41l4-4V18z"/></svg>
+            <span>Pluie-inondation</span>
+            <span class="alert-level">Jaune</span>
+          </div>
+        </div>
+
+        <!-- Current -->
+        <div class="current-section">
+          <div class="current-main">
+            <div class="current-icon">⛅</div>
+            <div class="current-temp">
+              <span class="temp-value">18</span>
+              <span class="temp-unit">°C</span>
+            </div>
+          </div>
+          <div class="current-info">
+            <div class="condition-label">Partiellement nuageux</div>
+            <div class="apparent-temp">Ressenti 16°C</div>
+          </div>
+        </div>
+
+        <!-- Details -->
+        <div class="details-section">
+          <div class="details-grid">
+            <div class="detail-item">
+              <span class="detail-icon">💧</span>
+              <div class="detail-content">
+                <span class="detail-label">Humidité</span>
+                <span class="detail-value">72%</span>
+              </div>
+            </div>
+            <div class="detail-item">
+              <span class="detail-icon">🌡</span>
+              <div class="detail-content">
+                <span class="detail-label">Pression</span>
+                <span class="detail-value">1015 hPa</span>
+              </div>
+            </div>
+            <div class="detail-item">
+              <span class="detail-icon">💨</span>
+              <div class="detail-content">
+                <span class="detail-label">Vent</span>
+                <span class="detail-value">22 km/h SO</span>
+              </div>
+            </div>
+            <div class="detail-item">
+              <span class="detail-icon">🌊</span>
+              <div class="detail-content">
+                <span class="detail-label">Rafales</span>
+                <span class="detail-value">38 km/h</span>
+              </div>
+            </div>
+            <div class="detail-item">
+              <span class="detail-icon">☂️</span>
+              <div class="detail-content">
+                <span class="detail-label">Risque pluie</span>
+                <span class="detail-value">60%</span>
+              </div>
+            </div>
+            <div class="detail-item">
+              <span class="detail-icon">☀️</span>
+              <div class="detail-content">
+                <span class="detail-label">UV</span>
+                <span class="detail-value">4</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Rain Forecast -->
+        <div class="rain-section">
+          <div class="section-title">
+            <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#888"><path d="M12 2c-5.33 4.55-8 8.48-8 11.8 0 4.98 3.8 8.2 8 8.2s8-3.22 8-8.2c0-3.32-2.67-7.25-8-11.8z"/></svg>
+            <span>Pluie dans l'heure</span>
+            <span class="section-time">14:25</span>
+          </div>
+          <div class="rain-status has-rain">🌧️ Pluie prévue dans l'heure</div>
+          <div class="rain-bars">
+            <div class="rain-bar-container"><div class="rain-bar" style="height:8%;background:#E0E0E0"></div></div>
+            <div class="rain-bar-container"><div class="rain-bar" style="height:8%;background:#E0E0E0"></div></div>
+            <div class="rain-bar-container"><div class="rain-bar" style="height:8%;background:#E0E0E0"></div></div>
+            <div class="rain-bar-container"><div class="rain-bar" style="height:8%;background:#E0E0E0"></div></div>
+            <div class="rain-bar-container"><div class="rain-bar" style="height:40%;background:#64B5F6"></div></div>
+            <div class="rain-bar-container"><div class="rain-bar" style="height:40%;background:#64B5F6"></div></div>
+            <div class="rain-bar-container"><div class="rain-bar" style="height:70%;background:#1E88E5"></div></div>
+            <div class="rain-bar-container"><div class="rain-bar" style="height:70%;background:#1E88E5"></div></div>
+            <div class="rain-bar-container"><div class="rain-bar" style="height:100%;background:#0D47A1"></div></div>
+            <div class="rain-bar-container"><div class="rain-bar" style="height:70%;background:#1E88E5"></div></div>
+            <div class="rain-bar-container"><div class="rain-bar" style="height:40%;background:#64B5F6"></div></div>
+            <div class="rain-bar-container"><div class="rain-bar" style="height:8%;background:#E0E0E0"></div></div>
+          </div>
+          <div class="rain-time-labels">
+            <span>Maint.</span>
+            <span>+15 min</span>
+            <span>+30 min</span>
+            <span>+45 min</span>
+            <span>+60 min</span>
+          </div>
+          <div class="rain-legend">
+            <span class="legend-item"><span class="legend-dot" style="background:#E0E0E0"></span>Sec</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#64B5F6"></span>Faible</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#1E88E5"></span>Modérée</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#0D47A1"></span>Forte</span>
+          </div>
+        </div>
+
+        <!-- Hourly -->
+        <div class="hourly-section">
+          <div class="section-title">
+            <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#888"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+            <span>Prévisions horaires</span>
+          </div>
+          <div class="hourly-scroll">
+            <div class="hourly-item">
+              <span class="hourly-time">15:00</span>
+              <span class="hourly-icon">🌧️</span>
+              <span class="hourly-temp">17°</span>
+              <span class="hourly-precip">☂ 75%</span>
+            </div>
+            <div class="hourly-item">
+              <span class="hourly-time">16:00</span>
+              <span class="hourly-icon">🌧️</span>
+              <span class="hourly-temp">16°</span>
+              <span class="hourly-precip">☂ 60%</span>
+            </div>
+            <div class="hourly-item">
+              <span class="hourly-time">17:00</span>
+              <span class="hourly-icon">⛅</span>
+              <span class="hourly-temp">16°</span>
+              <span class="hourly-precip">☂ 30%</span>
+            </div>
+            <div class="hourly-item">
+              <span class="hourly-time">18:00</span>
+              <span class="hourly-icon">⛅</span>
+              <span class="hourly-temp">15°</span>
+              <span class="hourly-precip">☂ 15%</span>
+            </div>
+            <div class="hourly-item">
+              <span class="hourly-time">19:00</span>
+              <span class="hourly-icon">☁️</span>
+              <span class="hourly-temp">14°</span>
+              <span class="hourly-precip">☂ 10%</span>
+            </div>
+            <div class="hourly-item">
+              <span class="hourly-time">20:00</span>
+              <span class="hourly-icon">🌙</span>
+              <span class="hourly-temp">13°</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Daily -->
+        <div class="daily-section">
+          <div class="section-title">
+            <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#888"><path d="M9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm2-7h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20a2 2 0 002 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"/></svg>
+            <span>Prévisions</span>
+          </div>
+          <div class="daily-item">
+            <span class="daily-day">Aujourd'hui</span>
+            <span class="daily-icon">⛅</span>
+            <span class="daily-precip">☂ 60%</span>
+            <span class="daily-temps">
+              <span class="daily-high">19°</span>
+              <span class="daily-low">12°</span>
+            </span>
+          </div>
+          <div class="daily-item">
+            <span class="daily-day">Demain</span>
+            <span class="daily-icon">☀️</span>
+            <span class="daily-precip">☂ 10%</span>
+            <span class="daily-temps">
+              <span class="daily-high">22°</span>
+              <span class="daily-low">13°</span>
+            </span>
+          </div>
+          <div class="daily-item">
+            <span class="daily-day">Mar. 10</span>
+            <span class="daily-icon">☀️</span>
+            <span class="daily-precip"></span>
+            <span class="daily-temps">
+              <span class="daily-high">24°</span>
+              <span class="daily-low">14°</span>
+            </span>
+          </div>
+          <div class="daily-item">
+            <span class="daily-day">Mer. 11</span>
+            <span class="daily-icon">⛅</span>
+            <span class="daily-precip">☂ 35%</span>
+            <span class="daily-temps">
+              <span class="daily-high">21°</span>
+              <span class="daily-low">13°</span>
+            </span>
+          </div>
+          <div class="daily-item">
+            <span class="daily-day">Jeu. 12</span>
+            <span class="daily-icon">🌧️</span>
+            <span class="daily-precip">☂ 80%</span>
+            <span class="daily-temps">
+              <span class="daily-high">17°</span>
+              <span class="daily-low">11°</span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DARK THEME CARD -->
+    <div>
+      <div class="theme-label">🌙 Thème sombre</div>
+      <div class="card dark" style="margin-top: 24px;">
+        <!-- Header -->
+        <div class="card-header">
+          <span class="header-title">Guyancourt</span>
+          <span class="header-subtitle">Météo-France</span>
+        </div>
+
+        <!-- Current -->
+        <div class="current-section">
+          <div class="current-main">
+            <div class="current-icon">🌙</div>
+            <div class="current-temp">
+              <span class="temp-value">11</span>
+              <span class="temp-unit">°C</span>
+            </div>
+          </div>
+          <div class="current-info">
+            <div class="condition-label">Nuit dégagée</div>
+            <div class="apparent-temp">Ressenti 9°C</div>
+          </div>
+        </div>
+
+        <!-- Details -->
+        <div class="details-section">
+          <div class="details-grid">
+            <div class="detail-item">
+              <span class="detail-icon">💧</span>
+              <div class="detail-content">
+                <span class="detail-label">Humidité</span>
+                <span class="detail-value">85%</span>
+              </div>
+            </div>
+            <div class="detail-item">
+              <span class="detail-icon">🌡</span>
+              <div class="detail-content">
+                <span class="detail-label">Pression</span>
+                <span class="detail-value">1018 hPa</span>
+              </div>
+            </div>
+            <div class="detail-item">
+              <span class="detail-icon">💨</span>
+              <div class="detail-content">
+                <span class="detail-label">Vent</span>
+                <span class="detail-value">12 km/h N</span>
+              </div>
+            </div>
+            <div class="detail-item">
+              <span class="detail-icon">☀️</span>
+              <div class="detail-content">
+                <span class="detail-label">UV</span>
+                <span class="detail-value">0</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Rain Forecast (no rain) -->
+        <div class="rain-section">
+          <div class="section-title">
+            <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#888"><path d="M12 2c-5.33 4.55-8 8.48-8 11.8 0 4.98 3.8 8.2 8 8.2s8-3.22 8-8.2c0-3.32-2.67-7.25-8-11.8z"/></svg>
+            <span>Pluie dans l'heure</span>
+            <span class="section-time">22:10</span>
+          </div>
+          <div class="rain-status no-rain">☀️ Pas de pluie dans l'heure</div>
+          <div class="rain-bars">
+            <div class="rain-bar-container"><div class="rain-bar" style="height:8%;background:#555"></div></div>
+            <div class="rain-bar-container"><div class="rain-bar" style="height:8%;background:#555"></div></div>
+            <div class="rain-bar-container"><div class="rain-bar" style="height:8%;background:#555"></div></div>
+            <div class="rain-bar-container"><div class="rain-bar" style="height:8%;background:#555"></div></div>
+            <div class="rain-bar-container"><div class="rain-bar" style="height:8%;background:#555"></div></div>
+            <div class="rain-bar-container"><div class="rain-bar" style="height:8%;background:#555"></div></div>
+            <div class="rain-bar-container"><div class="rain-bar" style="height:8%;background:#555"></div></div>
+            <div class="rain-bar-container"><div class="rain-bar" style="height:8%;background:#555"></div></div>
+            <div class="rain-bar-container"><div class="rain-bar" style="height:8%;background:#555"></div></div>
+            <div class="rain-bar-container"><div class="rain-bar" style="height:8%;background:#555"></div></div>
+            <div class="rain-bar-container"><div class="rain-bar" style="height:8%;background:#555"></div></div>
+            <div class="rain-bar-container"><div class="rain-bar" style="height:8%;background:#555"></div></div>
+          </div>
+          <div class="rain-time-labels">
+            <span>Maint.</span>
+            <span>+15 min</span>
+            <span>+30 min</span>
+            <span>+45 min</span>
+            <span>+60 min</span>
+          </div>
+        </div>
+
+        <!-- Daily -->
+        <div class="daily-section">
+          <div class="section-title">
+            <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#888"><path d="M9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm2-7h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20a2 2 0 002 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"/></svg>
+            <span>Prévisions</span>
+          </div>
+          <div class="daily-item">
+            <span class="daily-day">Demain</span>
+            <span class="daily-icon">☀️</span>
+            <span class="daily-precip"></span>
+            <span class="daily-temps">
+              <span class="daily-high">22°</span>
+              <span class="daily-low">11°</span>
+            </span>
+          </div>
+          <div class="daily-item">
+            <span class="daily-day">Mar. 10</span>
+            <span class="daily-icon">☀️</span>
+            <span class="daily-precip"></span>
+            <span class="daily-temps">
+              <span class="daily-high">24°</span>
+              <span class="daily-low">13°</span>
+            </span>
+          </div>
+          <div class="daily-item">
+            <span class="daily-day">Mer. 11</span>
+            <span class="daily-icon">⛅</span>
+            <span class="daily-precip">☂ 35%</span>
+            <span class="daily-temps">
+              <span class="daily-high">21°</span>
+              <span class="daily-low">12°</span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>
