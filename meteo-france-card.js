@@ -1,31 +1,13 @@
 /**
  * Météo France Card - Custom Lovelace Card for Home Assistant
  * Displays Météo-France weather data with "pluie dans l'heure" rain timeline
+ * Uses native HA weather icons (ha-weather-icon)
  *
- * @version 1.0.0
+ * @version 1.1.0
  * @license MIT
  */
 
-const CARD_VERSION = '1.0.0';
-
-// Weather condition to icon mapping (MDI icons)
-const WEATHER_ICONS = {
-    'clear-night': 'mdi:weather-night',
-    'cloudy': 'mdi:weather-cloudy',
-    'fog': 'mdi:weather-fog',
-    'hail': 'mdi:weather-hail',
-    'lightning': 'mdi:weather-lightning',
-    'lightning-rainy': 'mdi:weather-lightning-rainy',
-    'partlycloudy': 'mdi:weather-partly-cloudy',
-    'pouring': 'mdi:weather-pouring',
-    'rainy': 'mdi:weather-rainy',
-    'snowy': 'mdi:weather-snowy',
-    'snowy-rainy': 'mdi:weather-snowy-rainy',
-    'sunny': 'mdi:weather-sunny',
-    'windy': 'mdi:weather-windy',
-    'windy-variant': 'mdi:weather-windy-variant',
-    'exceptional': 'mdi:alert-circle-outline',
-};
+const CARD_VERSION = '1.1.0';
 
 // French weather condition labels
 const WEATHER_LABELS_FR = {
@@ -46,14 +28,6 @@ const WEATHER_LABELS_FR = {
     'exceptional': 'Exceptionnel',
 };
 
-// Rain intensity colors
-const RAIN_COLORS = {
-    1: { color: '#4FC3F7', label: 'Temps sec', intensity: 0 },        // Dry
-    2: { color: '#29B6F6', label: 'Pluie faible', intensity: 1 },      // Light rain
-    3: { color: '#0288D1', label: 'Pluie modérée', intensity: 2 },     // Moderate rain
-    4: { color: '#01579B', label: 'Pluie forte', intensity: 3 },       // Heavy rain
-};
-
 // Rain description to intensity mapping
 const RAIN_DESC_MAP = {
     'Temps sec': 1,
@@ -62,7 +36,7 @@ const RAIN_DESC_MAP = {
     'Pluie forte': 4,
 };
 
-// Alert colors
+// Alert colors & icons
 const ALERT_COLORS = {
     'Vert': '#4CAF50',
     'Jaune': '#FFC107',
@@ -82,7 +56,6 @@ const ALERT_TYPES = {
     'Vagues-submersion': 'mdi:waves',
 };
 
-// Wind direction labels
 const WIND_DIRECTIONS = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSO', 'SO', 'OSO', 'O', 'ONO', 'NO', 'NNO', 'N'];
 
 class MeteoFranceCard extends HTMLElement {
@@ -139,10 +112,8 @@ class MeteoFranceCard extends HTMLElement {
     }
 
     set hass(hass) {
-        const oldHass = this._hass;
         this._hass = hass;
 
-        // Subscribe to forecast data if not already
         if (hass && !this._forecastSubscription) {
             this._subscribeForecast('daily');
             this._subscribeForecast('hourly');
@@ -153,7 +124,6 @@ class MeteoFranceCard extends HTMLElement {
 
     async _subscribeForecast(type) {
         if (!this._hass || !this._config.entity) return;
-
         try {
             const callback = (result) => {
                 if (type === 'daily') {
@@ -163,13 +133,11 @@ class MeteoFranceCard extends HTMLElement {
                 }
                 this._render();
             };
-
             const sub = await this._hass.connection.subscribeMessage(callback, {
                 type: 'weather/subscribe_forecast',
                 forecast_type: type,
                 entity_id: this._config.entity,
             });
-
             if (type === 'daily') {
                 this._forecastSubscription = sub;
             } else {
@@ -206,36 +174,29 @@ class MeteoFranceCard extends HTMLElement {
     }
 
     _getRainForecastEntity() {
-        if (this._config.rain_forecast_entity) {
-            return this._hass?.states[this._config.rain_forecast_entity];
-        }
-        return null;
+        return this._config.rain_forecast_entity
+            ? this._hass?.states[this._config.rain_forecast_entity]
+            : null;
     }
 
     _getAlertEntity() {
-        if (this._config.alert_entity) {
-            return this._hass?.states[this._config.alert_entity];
-        }
-        return null;
+        return this._config.alert_entity
+            ? this._hass?.states[this._config.alert_entity]
+            : null;
     }
 
     _getDetailEntity(key) {
         const entityId = this._config[key];
-        if (entityId) {
-            return this._hass?.states[entityId];
-        }
-        return null;
+        return entityId ? this._hass?.states[entityId] : null;
     }
 
     _getWindDirection(bearing) {
         if (bearing === undefined || bearing === null) return '';
-        const index = Math.round(bearing / 22.5);
-        return WIND_DIRECTIONS[index] || '';
+        return WIND_DIRECTIONS[Math.round(bearing / 22.5)] || '';
     }
 
     _formatTime(dateStr) {
-        const date = new Date(dateStr);
-        return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+        return new Date(dateStr).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
     }
 
     _formatDay(dateStr) {
@@ -243,10 +204,8 @@ class MeteoFranceCard extends HTMLElement {
         const today = new Date();
         const tomorrow = new Date(today);
         tomorrow.setDate(tomorrow.getDate() + 1);
-
         if (date.toDateString() === today.toDateString()) return "Aujourd'hui";
         if (date.toDateString() === tomorrow.toDateString()) return 'Demain';
-
         return date.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' });
     }
 
@@ -255,27 +214,20 @@ class MeteoFranceCard extends HTMLElement {
     _parseRainForecast() {
         const entity = this._getRainForecastEntity();
         if (!entity) return null;
-
-        const attrs = entity.attributes;
-        const forecast = attrs['1_hour_forecast'];
-        const refTime = attrs['forecast_time_ref'];
-
+        const forecast = entity.attributes['1_hour_forecast'];
+        const refTime = entity.attributes['forecast_time_ref'];
         if (!forecast) return null;
 
         const entries = [];
         for (const [time, description] of Object.entries(forecast)) {
-            const minutes = parseInt(time);
-            const intensity = RAIN_DESC_MAP[description] || 1;
-            entries.push({ minutes, description, intensity });
+            entries.push({
+                minutes: parseInt(time),
+                description,
+                intensity: RAIN_DESC_MAP[description] || 1,
+            });
         }
-
         entries.sort((a, b) => a.minutes - b.minutes);
-
-        return {
-            refTime,
-            entries,
-            hasRain: entries.some(e => e.intensity > 1),
-        };
+        return { refTime, entries, hasRain: entries.some(e => e.intensity > 1) };
     }
 
     // ── Alert Parsing ──────────────────────────────────────────────
@@ -283,10 +235,8 @@ class MeteoFranceCard extends HTMLElement {
     _parseAlerts() {
         const entity = this._getAlertEntity();
         if (!entity) return null;
-
         const attrs = entity.attributes;
         const alerts = [];
-
         for (const [key, value] of Object.entries(attrs)) {
             if (key.startsWith('Vent') || key.startsWith('Pluie') || key.startsWith('Orage') ||
                 key.startsWith('Inondation') || key.startsWith('Neige') || key.startsWith('Canicule') ||
@@ -296,11 +246,39 @@ class MeteoFranceCard extends HTMLElement {
                 }
             }
         }
+        return { state: entity.state, alerts };
+    }
 
-        return {
-            state: entity.state,
-            alerts,
-        };
+    // ── Hydrate weather icon placeholders with native HA icons ─────
+
+    _hydrateWeatherIcons() {
+        const root = this.shadowRoot;
+        if (!root) return;
+
+        root.querySelectorAll('.weather-icon-slot').forEach(slot => {
+            const condition = slot.dataset.condition;
+            const size = parseInt(slot.dataset.size) || 24;
+            if (!condition) return;
+
+            // Clear previous icon
+            slot.innerHTML = '';
+
+            // Create native HA weather icon element
+            const icon = document.createElement('ha-weather-icon');
+            icon.style.setProperty('--mdc-icon-size', `${size}px`);
+            icon.style.width = `${size}px`;
+            icon.style.height = `${size}px`;
+
+            // Set the condition property (required by the Lit component)
+            icon.condition = condition;
+
+            // Pass hass for proper state-based rendering
+            if (this._hass) {
+                icon.hass = this._hass;
+            }
+
+            slot.appendChild(icon);
+        });
     }
 
     // ── Render ─────────────────────────────────────────────────────
@@ -338,6 +316,9 @@ class MeteoFranceCard extends HTMLElement {
         ${this._config.show_daily_forecast ? this._renderDailyForecast() : ''}
       </ha-card>
     `;
+
+        // After innerHTML is set, inject native HA weather icons into placeholders
+        this._hydrateWeatherIcons();
     }
 
     // ── Render Sections ────────────────────────────────────────────
@@ -353,7 +334,6 @@ class MeteoFranceCard extends HTMLElement {
 
     _renderAlerts(alertData) {
         if (!alertData || alertData.alerts.length === 0) return '';
-
         const alertsHtml = alertData.alerts.map(alert => {
             const color = ALERT_COLORS[alert.level] || '#FFC107';
             const icon = ALERT_TYPES[alert.type] || 'mdi:alert';
@@ -365,16 +345,10 @@ class MeteoFranceCard extends HTMLElement {
         </div>
       `;
         }).join('');
-
-        return `
-      <div class="alerts-section">
-        ${alertsHtml}
-      </div>
-    `;
+        return `<div class="alerts-section">${alertsHtml}</div>`;
     }
 
     _renderCurrent(state, attrs) {
-        const icon = WEATHER_ICONS[state] || 'mdi:weather-cloudy';
         const label = WEATHER_LABELS_FR[state] || state;
         const temp = attrs.temperature !== undefined ? Math.round(attrs.temperature) : '--';
         const unit = attrs.temperature_unit || '°C';
@@ -385,7 +359,7 @@ class MeteoFranceCard extends HTMLElement {
       <div class="current-section">
         <div class="current-main">
           <div class="current-icon">
-            <ha-icon icon="${icon}"></ha-icon>
+            <span class="weather-icon-slot" data-condition="${state}" data-size="52"></span>
           </div>
           <div class="current-temp">
             <span class="temp-value">${temp}</span>
@@ -403,111 +377,41 @@ class MeteoFranceCard extends HTMLElement {
     _renderDetails(attrs) {
         const details = [];
 
-        if (attrs.humidity !== undefined) {
-            details.push({
-                icon: 'mdi:water-percent',
-                label: 'Humidité',
-                value: `${attrs.humidity}%`,
-            });
-        }
-
-        if (attrs.pressure !== undefined) {
-            details.push({
-                icon: 'mdi:gauge',
-                label: 'Pression',
-                value: `${attrs.pressure} ${attrs.pressure_unit || 'hPa'}`,
-            });
-        }
-
+        if (attrs.humidity !== undefined)
+            details.push({ icon: 'mdi:water-percent', label: 'Humidité', value: `${attrs.humidity}%` });
+        if (attrs.pressure !== undefined)
+            details.push({ icon: 'mdi:gauge', label: 'Pression', value: `${attrs.pressure} ${attrs.pressure_unit || 'hPa'}` });
         if (attrs.wind_speed !== undefined) {
             const dir = this._getWindDirection(attrs.wind_bearing);
-            details.push({
-                icon: 'mdi:weather-windy',
-                label: 'Vent',
-                value: `${Math.round(attrs.wind_speed)} ${attrs.wind_speed_unit || 'km/h'} ${dir}`,
-            });
+            details.push({ icon: 'mdi:weather-windy', label: 'Vent', value: `${Math.round(attrs.wind_speed)} ${attrs.wind_speed_unit || 'km/h'} ${dir}` });
         }
+        if (attrs.wind_gust_speed !== undefined)
+            details.push({ icon: 'mdi:weather-windy-variant', label: 'Rafales', value: `${Math.round(attrs.wind_gust_speed)} ${attrs.wind_speed_unit || 'km/h'}` });
+        if (attrs.visibility !== undefined)
+            details.push({ icon: 'mdi:eye', label: 'Visibilité', value: `${attrs.visibility} ${attrs.visibility_unit || 'km'}` });
+        if (attrs.uv_index !== undefined)
+            details.push({ icon: 'mdi:sun-wireless', label: 'UV', value: attrs.uv_index });
+        if (attrs.cloud_coverage !== undefined)
+            details.push({ icon: 'mdi:cloud', label: 'Nébulosité', value: `${attrs.cloud_coverage}%` });
+        if (attrs.dew_point !== undefined)
+            details.push({ icon: 'mdi:thermometer-water', label: 'Point de rosée', value: `${Math.round(attrs.dew_point)}°` });
 
-        if (attrs.wind_gust_speed !== undefined) {
-            details.push({
-                icon: 'mdi:weather-windy-variant',
-                label: 'Rafales',
-                value: `${Math.round(attrs.wind_gust_speed)} ${attrs.wind_speed_unit || 'km/h'}`,
-            });
+        // Météo-France specific entities
+        for (const { key, icon, label } of [
+            { key: 'rain_chance_entity', icon: 'mdi:umbrella', label: 'Risque pluie' },
+            { key: 'freeze_chance_entity', icon: 'mdi:snowflake', label: 'Risque gel' },
+            { key: 'snow_chance_entity', icon: 'mdi:snowflake-variant', label: 'Risque neige' },
+        ]) {
+            const ent = this._getDetailEntity(key);
+            if (ent) details.push({ icon, label, value: `${ent.state}%` });
         }
-
-        if (attrs.visibility !== undefined) {
-            details.push({
-                icon: 'mdi:eye',
-                label: 'Visibilité',
-                value: `${attrs.visibility} ${attrs.visibility_unit || 'km'}`,
-            });
-        }
-
-        if (attrs.uv_index !== undefined) {
-            details.push({
-                icon: 'mdi:sun-wireless',
-                label: 'UV',
-                value: attrs.uv_index,
-            });
-        }
-
-        if (attrs.cloud_coverage !== undefined) {
-            details.push({
-                icon: 'mdi:cloud',
-                label: 'Nébulosité',
-                value: `${attrs.cloud_coverage}%`,
-            });
-        }
-
-        if (attrs.dew_point !== undefined) {
-            details.push({
-                icon: 'mdi:thermometer-water',
-                label: 'Point de rosée',
-                value: `${Math.round(attrs.dew_point)}°`,
-            });
-        }
-
-        // Additional Météo-France entities
-        const rainChance = this._getDetailEntity('rain_chance_entity');
-        if (rainChance) {
-            details.push({
-                icon: 'mdi:umbrella',
-                label: 'Risque pluie',
-                value: `${rainChance.state}%`,
-            });
-        }
-
-        const freezeChance = this._getDetailEntity('freeze_chance_entity');
-        if (freezeChance) {
-            details.push({
-                icon: 'mdi:snowflake',
-                label: 'Risque gel',
-                value: `${freezeChance.state}%`,
-            });
-        }
-
-        const snowChance = this._getDetailEntity('snow_chance_entity');
-        if (snowChance) {
-            details.push({
-                icon: 'mdi:snowflake-variant',
-                label: 'Risque neige',
-                value: `${snowChance.state}%`,
-            });
-        }
-
         const uvEntity = this._getDetailEntity('uv_entity');
-        if (uvEntity && attrs.uv_index === undefined) {
-            details.push({
-                icon: 'mdi:sun-wireless',
-                label: 'UV',
-                value: uvEntity.state,
-            });
-        }
+        if (uvEntity && attrs.uv_index === undefined)
+            details.push({ icon: 'mdi:sun-wireless', label: 'UV', value: uvEntity.state });
 
         if (details.length === 0) return '';
 
-        const detailsHtml = details.map(d => `
+        const html = details.map(d => `
       <div class="detail-item">
         <ha-icon icon="${d.icon}"></ha-icon>
         <div class="detail-content">
@@ -517,11 +421,7 @@ class MeteoFranceCard extends HTMLElement {
       </div>
     `).join('');
 
-        return `
-      <div class="details-section">
-        <div class="details-grid">${detailsHtml}</div>
-      </div>
-    `;
+        return `<div class="details-section"><div class="details-grid">${html}</div></div>`;
     }
 
     _renderRainForecast(rainData) {
@@ -542,20 +442,15 @@ class MeteoFranceCard extends HTMLElement {
 
         const refTime = rainData.refTime ? this._formatTime(rainData.refTime) : '';
 
-        // Build the rain timeline bars
-        const barsHtml = rainData.entries.map((entry, index) => {
-            const intensity = entry.intensity;
-            let barColor;
-            let barHeight;
-
-            switch (intensity) {
-                case 1: barColor = 'var(--rain-dry-color, #E0E0E0)'; barHeight = '8%'; break;
+        const barsHtml = rainData.entries.map(entry => {
+            let barColor, barHeight;
+            switch (entry.intensity) {
+                case 1: barColor = 'var(--rain-dry-color, #555)'; barHeight = '8%'; break;
                 case 2: barColor = 'var(--rain-light-color, #64B5F6)'; barHeight = '40%'; break;
                 case 3: barColor = 'var(--rain-moderate-color, #1E88E5)'; barHeight = '70%'; break;
                 case 4: barColor = 'var(--rain-heavy-color, #0D47A1)'; barHeight = '100%'; break;
-                default: barColor = 'var(--rain-dry-color, #E0E0E0)'; barHeight = '8%';
+                default: barColor = 'var(--rain-dry-color, #555)'; barHeight = '8%';
             }
-
             return `
         <div class="rain-bar-container" title="${entry.description} (${entry.minutes} min)">
           <div class="rain-bar" style="height: ${barHeight}; background: ${barColor};"></div>
@@ -563,16 +458,6 @@ class MeteoFranceCard extends HTMLElement {
       `;
         }).join('');
 
-        // Time labels
-        const timeLabelsHtml = `
-      <span>Maint.</span>
-      <span>+15 min</span>
-      <span>+30 min</span>
-      <span>+45 min</span>
-      <span>+60 min</span>
-    `;
-
-        // Status text
         const statusText = rainData.hasRain
             ? '🌧️ Pluie prévue dans l\'heure'
             : '☀️ Pas de pluie dans l\'heure';
@@ -584,26 +469,18 @@ class MeteoFranceCard extends HTMLElement {
           <span>Pluie dans l'heure</span>
           ${refTime ? `<span class="section-time">${refTime}</span>` : ''}
         </div>
-        <div class="rain-status ${rainData.hasRain ? 'has-rain' : 'no-rain'}">
-          ${statusText}
-        </div>
+        <div class="rain-status ${rainData.hasRain ? 'has-rain' : 'no-rain'}">${statusText}</div>
         <div class="rain-timeline">
           <div class="rain-bars">${barsHtml}</div>
-          <div class="rain-time-labels">${timeLabelsHtml}</div>
+          <div class="rain-time-labels">
+            <span>Maint.</span><span>+15 min</span><span>+30 min</span><span>+45 min</span><span>+60 min</span>
+          </div>
         </div>
         <div class="rain-legend">
-          <span class="legend-item">
-            <span class="legend-dot" style="background: var(--rain-dry-color, #E0E0E0)"></span>Sec
-          </span>
-          <span class="legend-item">
-            <span class="legend-dot" style="background: var(--rain-light-color, #64B5F6)"></span>Faible
-          </span>
-          <span class="legend-item">
-            <span class="legend-dot" style="background: var(--rain-moderate-color, #1E88E5)"></span>Modérée
-          </span>
-          <span class="legend-item">
-            <span class="legend-dot" style="background: var(--rain-heavy-color, #0D47A1)"></span>Forte
-          </span>
+          <span class="legend-item"><span class="legend-dot" style="background: var(--rain-dry-color, #555)"></span>Sec</span>
+          <span class="legend-item"><span class="legend-dot" style="background: var(--rain-light-color, #64B5F6)"></span>Faible</span>
+          <span class="legend-item"><span class="legend-dot" style="background: var(--rain-moderate-color, #1E88E5)"></span>Modérée</span>
+          <span class="legend-item"><span class="legend-dot" style="background: var(--rain-heavy-color, #0D47A1)"></span>Forte</span>
         </div>
       </div>
     `;
@@ -616,7 +493,6 @@ class MeteoFranceCard extends HTMLElement {
         const forecasts = this._hourlyForecasts.slice(0, count);
 
         const itemsHtml = forecasts.map(fc => {
-            const icon = WEATHER_ICONS[fc.condition] || 'mdi:weather-cloudy';
             const temp = fc.temperature !== undefined ? Math.round(fc.temperature) : '--';
             const time = this._formatTime(fc.datetime);
             const precip = fc.precipitation_probability !== undefined
@@ -625,7 +501,7 @@ class MeteoFranceCard extends HTMLElement {
             return `
         <div class="hourly-item">
           <span class="hourly-time">${time}</span>
-          <ha-icon icon="${icon}"></ha-icon>
+          <span class="weather-icon-slot hourly-weather-icon" data-condition="${fc.condition || 'cloudy'}" data-size="28"></span>
           <span class="hourly-temp">${temp}°</span>
           ${precip ? `<span class="hourly-precip"><ha-icon icon="mdi:umbrella" style="--mdc-icon-size: 12px;"></ha-icon>${precip}</span>` : ''}
         </div>
@@ -650,7 +526,6 @@ class MeteoFranceCard extends HTMLElement {
         const forecasts = this._forecasts.slice(0, count);
 
         const itemsHtml = forecasts.map(fc => {
-            const icon = WEATHER_ICONS[fc.condition] || 'mdi:weather-cloudy';
             const tempHigh = fc.temperature !== undefined ? Math.round(fc.temperature) : '--';
             const tempLow = fc.templow !== undefined ? Math.round(fc.templow) : '--';
             const day = this._formatDay(fc.datetime);
@@ -660,7 +535,7 @@ class MeteoFranceCard extends HTMLElement {
             return `
         <div class="daily-item">
           <span class="daily-day">${day}</span>
-          <ha-icon icon="${icon}"></ha-icon>
+          <span class="weather-icon-slot daily-weather-icon" data-condition="${fc.condition || 'cloudy'}" data-size="24"></span>
           ${precip ? `<span class="daily-precip"><ha-icon icon="mdi:umbrella" style="--mdc-icon-size: 13px;"></ha-icon>${precip}</span>` : '<span class="daily-precip"></span>'}
           <span class="daily-temps">
             <span class="daily-high">${tempHigh}°</span>
@@ -699,418 +574,141 @@ class MeteoFranceCard extends HTMLElement {
         border-radius: var(--ha-card-border-radius, var(--mf-radius));
       }
 
-      /* ── Header ──────────────────────────────── */
-
       .card-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
         padding: 16px 16px 8px;
       }
-
-      .header-title {
-        font-size: 1.1em;
-        font-weight: 600;
-        color: var(--mf-primary);
-      }
-
+      .header-title { font-size: 1.1em; font-weight: 600; color: var(--mf-primary); }
       .header-subtitle {
-        font-size: 0.75em;
-        font-weight: 500;
-        color: var(--mf-accent);
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        opacity: 0.8;
+        font-size: 0.75em; font-weight: 500; color: var(--mf-accent);
+        text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.8;
       }
 
       /* ── Alerts ──────────────────────────────── */
-
-      .alerts-section {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-        padding: 0 16px 8px;
-      }
-
+      .alerts-section { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 16px 8px; }
       .alert-chip {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        padding: 4px 10px;
-        border-radius: 16px;
-        font-size: 0.75em;
-        font-weight: 500;
+        display: inline-flex; align-items: center; gap: 4px;
+        padding: 4px 10px; border-radius: 16px;
+        font-size: 0.75em; font-weight: 500;
         background: color-mix(in srgb, var(--alert-color) 15%, transparent);
         color: var(--alert-color);
         border: 1px solid color-mix(in srgb, var(--alert-color) 30%, transparent);
       }
-
-      .alert-chip ha-icon {
-        --mdc-icon-size: 14px;
-      }
-
-      .alert-level {
-        font-weight: 700;
-      }
+      .alert-chip ha-icon { --mdc-icon-size: 14px; }
+      .alert-level { font-weight: 700; }
 
       /* ── Current Weather ─────────────────────── */
-
       .current-section {
         padding: 8px 16px 16px;
-        display: flex;
-        align-items: center;
-        gap: 16px;
+        display: flex; align-items: center; gap: 16px;
       }
-
-      .current-main {
-        display: flex;
-        align-items: center;
-        gap: 12px;
+      .current-main { display: flex; align-items: center; gap: 12px; }
+      .current-icon {
+        display: flex; align-items: center; justify-content: center;
+        width: 56px; height: 56px;
       }
-
-      .current-icon ha-icon {
-        --mdc-icon-size: 52px;
-        color: var(--state-icon-color, var(--paper-item-icon-color, #44739e));
-      }
-
-      .current-temp {
-        display: flex;
-        align-items: flex-start;
-      }
-
-      .temp-value {
-        font-size: 3em;
-        font-weight: 300;
-        line-height: 1;
-        color: var(--mf-primary);
-      }
-
-      .temp-unit {
-        font-size: 1.2em;
-        font-weight: 400;
-        color: var(--mf-secondary);
-        margin-top: 6px;
-        margin-left: 2px;
-      }
-
-      .current-info {
-        flex: 1;
-        text-align: right;
-      }
-
-      .condition-label {
-        font-size: 1em;
-        font-weight: 500;
-        color: var(--mf-primary);
-      }
-
-      .apparent-temp {
-        font-size: 0.85em;
-        color: var(--mf-secondary);
-        margin-top: 2px;
-      }
+      .current-temp { display: flex; align-items: flex-start; }
+      .temp-value { font-size: 3em; font-weight: 300; line-height: 1; color: var(--mf-primary); }
+      .temp-unit { font-size: 1.2em; font-weight: 400; color: var(--mf-secondary); margin-top: 6px; margin-left: 2px; }
+      .current-info { flex: 1; text-align: right; }
+      .condition-label { font-size: 1em; font-weight: 500; color: var(--mf-primary); }
+      .apparent-temp { font-size: 0.85em; color: var(--mf-secondary); margin-top: 2px; }
 
       /* ── Details Grid ────────────────────────── */
-
-      .details-section {
-        padding: 0 16px 12px;
-      }
-
-      .details-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 8px;
-      }
-
+      .details-section { padding: 0 16px 12px; }
+      .details-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
       .detail-item {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 6px 8px;
-        border-radius: 8px;
+        display: flex; align-items: center; gap: 8px;
+        padding: 6px 8px; border-radius: 8px;
         background: color-mix(in srgb, var(--mf-primary) 4%, transparent);
       }
-
-      .detail-item ha-icon {
-        --mdc-icon-size: 18px;
-        color: var(--mf-secondary);
-        flex-shrink: 0;
-      }
-
-      .detail-content {
-        display: flex;
-        flex-direction: column;
-        min-width: 0;
-      }
-
-      .detail-label {
-        font-size: 0.7em;
-        color: var(--mf-secondary);
-        text-transform: uppercase;
-        letter-spacing: 0.3px;
-      }
-
+      .detail-item ha-icon { --mdc-icon-size: 18px; color: var(--mf-secondary); flex-shrink: 0; }
+      .detail-content { display: flex; flex-direction: column; min-width: 0; }
+      .detail-label { font-size: 0.7em; color: var(--mf-secondary); text-transform: uppercase; letter-spacing: 0.3px; }
       .detail-value {
-        font-size: 0.85em;
-        font-weight: 500;
-        color: var(--mf-primary);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        font-size: 0.85em; font-weight: 500; color: var(--mf-primary);
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
       }
 
       /* ── Section Titles ──────────────────────── */
-
       .section-title {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        padding-bottom: 8px;
-        font-size: 0.85em;
-        font-weight: 600;
-        color: var(--mf-secondary);
+        display: flex; align-items: center; gap: 6px;
+        padding-bottom: 8px; font-size: 0.85em; font-weight: 600; color: var(--mf-secondary);
       }
+      .section-title ha-icon { --mdc-icon-size: 18px; }
+      .section-time { margin-left: auto; font-weight: 400; font-size: 0.9em; opacity: 0.7; }
 
-      .section-title ha-icon {
-        --mdc-icon-size: 18px;
-      }
-
-      .section-time {
-        margin-left: auto;
-        font-weight: 400;
-        font-size: 0.9em;
-        opacity: 0.7;
-      }
-
-      /* ── Rain Forecast Timeline ──────────────── */
-
+      /* ── Rain Forecast ───────────────────────── */
       .rain-section {
-        padding: 12px 16px;
-        margin: 0 12px 12px;
-        border-radius: 12px;
+        padding: 12px 16px; margin: 0 12px 12px; border-radius: 12px;
         background: color-mix(in srgb, var(--mf-accent) 6%, transparent);
         border: 1px solid color-mix(in srgb, var(--mf-accent) 12%, transparent);
       }
-
-      .rain-status {
-        font-size: 0.85em;
-        font-weight: 500;
-        margin-bottom: 10px;
-      }
-
-      .rain-status.no-rain {
-        color: var(--success-color, #4CAF50);
-      }
-
-      .rain-status.has-rain {
-        color: var(--warning-color, #FF9800);
-      }
-
-      .rain-timeline {
-        margin-bottom: 8px;
-      }
-
-      .rain-bars {
-        display: flex;
-        gap: 2px;
-        height: 60px;
-        align-items: flex-end;
-        padding: 0 4px;
-      }
-
-      .rain-bar-container {
-        flex: 1;
-        height: 100%;
-        display: flex;
-        align-items: flex-end;
-        cursor: pointer;
-      }
-
+      .rain-status { font-size: 0.85em; font-weight: 500; margin-bottom: 10px; }
+      .rain-status.no-rain { color: var(--success-color, #4CAF50); }
+      .rain-status.has-rain { color: var(--warning-color, #FF9800); }
+      .rain-timeline { margin-bottom: 8px; }
+      .rain-bars { display: flex; gap: 2px; height: 60px; align-items: flex-end; padding: 0 4px; }
+      .rain-bar-container { flex: 1; height: 100%; display: flex; align-items: flex-end; cursor: pointer; }
       .rain-bar {
-        width: 100%;
-        border-radius: 3px 3px 0 0;
-        transition: height 0.3s ease, background 0.3s ease;
-        min-height: 4px;
+        width: 100%; border-radius: 3px 3px 0 0;
+        transition: height 0.3s ease, background 0.3s ease; min-height: 4px;
       }
-
-      .rain-bar-container:hover .rain-bar {
-        opacity: 0.8;
-        filter: brightness(1.1);
-      }
-
+      .rain-bar-container:hover .rain-bar { opacity: 0.8; filter: brightness(1.1); }
       .rain-time-labels {
-        display: flex;
-        justify-content: space-between;
-        padding: 6px 0 0;
-        font-size: 0.65em;
-        color: var(--mf-secondary);
-        border-top: 1px solid var(--mf-divider);
-        margin-top: 4px;
+        display: flex; justify-content: space-between;
+        padding: 6px 0 0; font-size: 0.65em; color: var(--mf-secondary);
+        border-top: 1px solid var(--mf-divider); margin-top: 4px;
       }
-
-      .rain-unavailable {
-        font-size: 0.85em;
-        color: var(--mf-secondary);
-        font-style: italic;
-        padding: 8px 0;
-      }
-
-      .rain-legend {
-        display: flex;
-        justify-content: center;
-        gap: 12px;
-        font-size: 0.7em;
-        color: var(--mf-secondary);
-      }
-
-      .legend-item {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-      }
-
-      .legend-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 2px;
-        display: inline-block;
-      }
+      .rain-unavailable { font-size: 0.85em; color: var(--mf-secondary); font-style: italic; padding: 8px 0; }
+      .rain-legend { display: flex; justify-content: center; gap: 12px; font-size: 0.7em; color: var(--mf-secondary); }
+      .legend-item { display: flex; align-items: center; gap: 4px; }
+      .legend-dot { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
 
       /* ── Hourly Forecast ─────────────────────── */
-
-      .hourly-section {
-        padding: 12px 16px;
-        border-top: 1px solid var(--mf-divider);
-      }
-
+      .hourly-section { padding: 12px 16px; border-top: 1px solid var(--mf-divider); }
       .hourly-scroll {
-        display: flex;
-        gap: 4px;
-        overflow-x: auto;
-        padding-bottom: 4px;
+        display: flex; gap: 4px; overflow-x: auto; padding-bottom: 4px;
         scrollbar-width: thin;
       }
-
-      .hourly-scroll::-webkit-scrollbar {
-        height: 4px;
-      }
-
-      .hourly-scroll::-webkit-scrollbar-thumb {
-        background: var(--mf-divider);
-        border-radius: 2px;
-      }
-
+      .hourly-scroll::-webkit-scrollbar { height: 4px; }
+      .hourly-scroll::-webkit-scrollbar-thumb { background: var(--mf-divider); border-radius: 2px; }
       .hourly-item {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 4px;
-        min-width: 56px;
-        padding: 8px 6px;
-        border-radius: 10px;
-        background: color-mix(in srgb, var(--mf-primary) 3%, transparent);
-        flex-shrink: 0;
+        display: flex; flex-direction: column; align-items: center; gap: 4px;
+        min-width: 56px; padding: 8px 6px; border-radius: 10px;
+        background: color-mix(in srgb, var(--mf-primary) 3%, transparent); flex-shrink: 0;
       }
-
-      .hourly-time {
-        font-size: 0.72em;
-        font-weight: 500;
-        color: var(--mf-secondary);
-      }
-
-      .hourly-item ha-icon {
-        --mdc-icon-size: 24px;
-        color: var(--state-icon-color, var(--paper-item-icon-color, #44739e));
-      }
-
-      .hourly-temp {
-        font-size: 0.9em;
-        font-weight: 600;
-        color: var(--mf-primary);
-      }
-
-      .hourly-precip {
-        display: flex;
-        align-items: center;
-        gap: 2px;
-        font-size: 0.65em;
-        color: var(--mf-secondary);
-      }
-
-      .hourly-precip ha-icon {
-        --mdc-icon-size: 12px;
-        color: var(--mf-secondary);
-      }
+      .hourly-time { font-size: 0.72em; font-weight: 500; color: var(--mf-secondary); }
+      .hourly-weather-icon { display: flex; align-items: center; justify-content: center; height: 28px; }
+      .hourly-temp { font-size: 0.9em; font-weight: 600; color: var(--mf-primary); }
+      .hourly-precip { display: flex; align-items: center; gap: 2px; font-size: 0.65em; color: var(--mf-secondary); }
+      .hourly-precip ha-icon { --mdc-icon-size: 12px; color: var(--mf-secondary); }
 
       /* ── Daily Forecast ──────────────────────── */
-
-      .daily-section {
-        padding: 12px 16px 16px;
-        border-top: 1px solid var(--mf-divider);
-      }
-
-      .daily-item {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 7px 0;
-      }
-
-      .daily-item:not(:last-child) {
-        border-bottom: 1px solid color-mix(in srgb, var(--mf-divider) 50%, transparent);
-      }
-
+      .daily-section { padding: 12px 16px 16px; border-top: 1px solid var(--mf-divider); }
+      .daily-item { display: flex; align-items: center; gap: 8px; padding: 7px 0; }
+      .daily-item:not(:last-child) { border-bottom: 1px solid color-mix(in srgb, var(--mf-divider) 50%, transparent); }
       .daily-day {
-        font-size: 0.85em;
-        font-weight: 500;
-        color: var(--mf-primary);
-        width: 80px;
-        flex-shrink: 0;
-        text-transform: capitalize;
+        font-size: 0.85em; font-weight: 500; color: var(--mf-primary);
+        width: 80px; flex-shrink: 0; text-transform: capitalize;
       }
-
-      .daily-item ha-icon {
-        --mdc-icon-size: 22px;
-        color: var(--state-icon-color, var(--paper-item-icon-color, #44739e));
-        flex-shrink: 0;
+      .daily-weather-icon {
+        display: flex; align-items: center; justify-content: center;
+        width: 28px; height: 28px; flex-shrink: 0;
       }
-
       .daily-precip {
-        display: flex;
-        align-items: center;
-        gap: 2px;
-        font-size: 0.75em;
-        color: var(--mf-secondary);
-        width: 48px;
-        flex-shrink: 0;
+        display: flex; align-items: center; gap: 2px;
+        font-size: 0.75em; color: var(--mf-secondary); width: 48px; flex-shrink: 0;
       }
+      .daily-precip ha-icon { --mdc-icon-size: 13px; color: var(--mf-secondary); }
+      .daily-temps { margin-left: auto; display: flex; gap: 6px; font-size: 0.9em; flex-shrink: 0; }
+      .daily-high { font-weight: 600; color: var(--mf-primary); width: 32px; text-align: right; }
+      .daily-low { font-weight: 400; color: var(--mf-secondary); width: 32px; text-align: right; }
 
-      .daily-precip ha-icon {
-        --mdc-icon-size: 13px;
-        color: var(--mf-secondary);
-      }
-
-      .daily-temps {
-        margin-left: auto;
-        display: flex;
-        gap: 6px;
-        font-size: 0.9em;
-        flex-shrink: 0;
-      }
-
-      .daily-high {
-        font-weight: 600;
-        color: var(--mf-primary);
-        width: 32px;
-        text-align: right;
-      }
-
-      .daily-low {
-        font-weight: 400;
-        color: var(--mf-secondary);
-        width: 32px;
-        text-align: right;
-      }
+      /* ── Weather icon placeholders ────────────── */
+      .weather-icon-slot { display: inline-flex; align-items: center; justify-content: center; }
     `;
     }
 }
@@ -1125,9 +723,7 @@ class MeteoFranceCardEditor extends HTMLElement {
         this._hass = null;
     }
 
-    set hass(hass) {
-        this._hass = hass;
-    }
+    set hass(hass) { this._hass = hass; }
 
     setConfig(config) {
         this._config = config;
@@ -1137,201 +733,111 @@ class MeteoFranceCardEditor extends HTMLElement {
     _render() {
         this.shadowRoot.innerHTML = `
       <style>
-        .editor-row {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-          margin-bottom: 12px;
+        .editor-row { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+        .editor-row label { font-weight: 500; font-size: 0.9em; color: var(--primary-text-color); }
+        .editor-row input, .editor-row select {
+          padding: 8px; border: 1px solid var(--divider-color);
+          border-radius: 8px; background: var(--card-background-color);
+          color: var(--primary-text-color); font-size: 0.9em;
         }
-        .editor-row label {
-          font-weight: 500;
-          font-size: 0.9em;
-          color: var(--primary-text-color);
-        }
-        .editor-row input,
-        .editor-row select {
-          padding: 8px;
-          border: 1px solid var(--divider-color);
-          border-radius: 8px;
-          background: var(--card-background-color);
-          color: var(--primary-text-color);
-          font-size: 0.9em;
-        }
-        .editor-row .checkbox-row {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
+        .editor-row .checkbox-row { display: flex; align-items: center; gap: 8px; }
         h3 {
-          margin: 16px 0 8px;
-          font-size: 0.95em;
-          color: var(--primary-text-color);
-          border-bottom: 1px solid var(--divider-color);
-          padding-bottom: 4px;
+          margin: 16px 0 8px; font-size: 0.95em; color: var(--primary-text-color);
+          border-bottom: 1px solid var(--divider-color); padding-bottom: 4px;
         }
       </style>
 
       <h3>Entités principales</h3>
-
       <div class="editor-row">
         <label>Entité météo (weather.*)</label>
-        <input type="text" id="entity" value="${this._config.entity || ''}"
-               placeholder="weather.ma_ville">
+        <input type="text" id="entity" value="${this._config.entity || ''}" placeholder="weather.saint_cyr_l_ecole">
       </div>
-
       <div class="editor-row">
-        <label>Entité pluie prochaine heure (sensor.*_next_rain)</label>
-        <input type="text" id="rain_forecast_entity" value="${this._config.rain_forecast_entity || ''}"
-               placeholder="sensor.ma_ville_next_rain">
+        <label>Entité pluie prochaine heure</label>
+        <input type="text" id="rain_forecast_entity" value="${this._config.rain_forecast_entity || ''}" placeholder="sensor.saint_cyr_l_ecole_next_rain">
       </div>
-
       <div class="editor-row">
-        <label>Entité alertes météo (sensor.*_weather_alert)</label>
-        <input type="text" id="alert_entity" value="${this._config.alert_entity || ''}"
-               placeholder="sensor.78_weather_alert">
+        <label>Entité alertes météo</label>
+        <input type="text" id="alert_entity" value="${this._config.alert_entity || ''}" placeholder="sensor.78_weather_alert">
       </div>
 
       <h3>Entités détail (optionnel)</h3>
-
       <div class="editor-row">
         <label>Risque de pluie</label>
-        <input type="text" id="rain_chance_entity" value="${this._config.rain_chance_entity || ''}"
-               placeholder="sensor.ma_ville_rain_chance">
+        <input type="text" id="rain_chance_entity" value="${this._config.rain_chance_entity || ''}">
       </div>
-
       <div class="editor-row">
         <label>Risque de gel</label>
-        <input type="text" id="freeze_chance_entity" value="${this._config.freeze_chance_entity || ''}"
-               placeholder="sensor.ma_ville_freeze_chance">
+        <input type="text" id="freeze_chance_entity" value="${this._config.freeze_chance_entity || ''}">
       </div>
-
       <div class="editor-row">
         <label>Risque de neige</label>
-        <input type="text" id="snow_chance_entity" value="${this._config.snow_chance_entity || ''}"
-               placeholder="sensor.ma_ville_snow_chance">
+        <input type="text" id="snow_chance_entity" value="${this._config.snow_chance_entity || ''}">
       </div>
-
       <div class="editor-row">
         <label>Indice UV</label>
-        <input type="text" id="uv_entity" value="${this._config.uv_entity || ''}"
-               placeholder="sensor.ma_ville_uv">
+        <input type="text" id="uv_entity" value="${this._config.uv_entity || ''}">
       </div>
 
       <h3>Affichage</h3>
-
       <div class="editor-row">
         <label>Nom personnalisé</label>
-        <input type="text" id="name" value="${this._config.name || ''}"
-               placeholder="Ma Ville">
+        <input type="text" id="name" value="${this._config.name || ''}">
       </div>
-
+      <div class="editor-row"><div class="checkbox-row"><input type="checkbox" id="show_current" ${this._config.show_current !== false ? 'checked' : ''}><label for="show_current">Météo actuelle</label></div></div>
+      <div class="editor-row"><div class="checkbox-row"><input type="checkbox" id="show_details" ${this._config.show_details !== false ? 'checked' : ''}><label for="show_details">Détails</label></div></div>
+      <div class="editor-row"><div class="checkbox-row"><input type="checkbox" id="show_rain_forecast" ${this._config.show_rain_forecast !== false ? 'checked' : ''}><label for="show_rain_forecast">Pluie dans l'heure</label></div></div>
+      <div class="editor-row"><div class="checkbox-row"><input type="checkbox" id="show_alert" ${this._config.show_alert !== false ? 'checked' : ''}><label for="show_alert">Alertes</label></div></div>
+      <div class="editor-row"><div class="checkbox-row"><input type="checkbox" id="show_hourly_forecast" ${this._config.show_hourly_forecast !== false ? 'checked' : ''}><label for="show_hourly_forecast">Prévisions horaires</label></div></div>
+      <div class="editor-row"><div class="checkbox-row"><input type="checkbox" id="show_daily_forecast" ${this._config.show_daily_forecast !== false ? 'checked' : ''}><label for="show_daily_forecast">Prévisions journalières</label></div></div>
       <div class="editor-row">
-        <div class="checkbox-row">
-          <input type="checkbox" id="show_current" ${this._config.show_current !== false ? 'checked' : ''}>
-          <label for="show_current">Afficher météo actuelle</label>
-        </div>
+        <label>Prévisions horaires (nombre)</label>
+        <input type="number" id="number_of_hourly_forecasts" min="1" max="24" value="${this._config.number_of_hourly_forecasts || 6}">
       </div>
-
       <div class="editor-row">
-        <div class="checkbox-row">
-          <input type="checkbox" id="show_details" ${this._config.show_details !== false ? 'checked' : ''}>
-          <label for="show_details">Afficher les détails</label>
-        </div>
-      </div>
-
-      <div class="editor-row">
-        <div class="checkbox-row">
-          <input type="checkbox" id="show_rain_forecast" ${this._config.show_rain_forecast !== false ? 'checked' : ''}>
-          <label for="show_rain_forecast">Afficher pluie dans l'heure</label>
-        </div>
-      </div>
-
-      <div class="editor-row">
-        <div class="checkbox-row">
-          <input type="checkbox" id="show_alert" ${this._config.show_alert !== false ? 'checked' : ''}>
-          <label for="show_alert">Afficher les alertes</label>
-        </div>
-      </div>
-
-      <div class="editor-row">
-        <div class="checkbox-row">
-          <input type="checkbox" id="show_hourly_forecast" ${this._config.show_hourly_forecast !== false ? 'checked' : ''}>
-          <label for="show_hourly_forecast">Afficher prévisions horaires</label>
-        </div>
-      </div>
-
-      <div class="editor-row">
-        <div class="checkbox-row">
-          <input type="checkbox" id="show_daily_forecast" ${this._config.show_daily_forecast !== false ? 'checked' : ''}>
-          <label for="show_daily_forecast">Afficher prévisions journalières</label>
-        </div>
-      </div>
-
-      <div class="editor-row">
-        <label>Nombre de prévisions horaires</label>
-        <input type="number" id="number_of_hourly_forecasts" min="1" max="24"
-               value="${this._config.number_of_hourly_forecasts || 6}">
-      </div>
-
-      <div class="editor-row">
-        <label>Nombre de jours de prévision</label>
-        <input type="number" id="number_of_daily_forecasts" min="1" max="7"
-               value="${this._config.number_of_daily_forecasts || 5}">
+        <label>Prévisions jours (nombre)</label>
+        <input type="number" id="number_of_daily_forecasts" min="1" max="7" value="${this._config.number_of_daily_forecasts || 5}">
       </div>
     `;
 
-        // Bind events
-        const textFields = [
-            'entity', 'rain_forecast_entity', 'alert_entity', 'name',
+        ['entity', 'rain_forecast_entity', 'alert_entity', 'name',
             'rain_chance_entity', 'freeze_chance_entity', 'snow_chance_entity', 'uv_entity'
-        ];
-        textFields.forEach(id => {
+        ].forEach(id => {
             const el = this.shadowRoot.getElementById(id);
-            if (el) {
-                el.addEventListener('change', () => {
-                    this._config = { ...this._config, [id]: el.value };
-                    this._fireConfigChanged();
-                });
-            }
+            if (el) el.addEventListener('change', () => {
+                this._config = { ...this._config, [id]: el.value };
+                this._fireConfigChanged();
+            });
         });
 
-        const checkboxFields = [
-            'show_current', 'show_details', 'show_rain_forecast',
+        ['show_current', 'show_details', 'show_rain_forecast',
             'show_alert', 'show_hourly_forecast', 'show_daily_forecast'
-        ];
-        checkboxFields.forEach(id => {
+        ].forEach(id => {
             const el = this.shadowRoot.getElementById(id);
-            if (el) {
-                el.addEventListener('change', () => {
-                    this._config = { ...this._config, [id]: el.checked };
-                    this._fireConfigChanged();
-                });
-            }
+            if (el) el.addEventListener('change', () => {
+                this._config = { ...this._config, [id]: el.checked };
+                this._fireConfigChanged();
+            });
         });
 
-        const numberFields = ['number_of_hourly_forecasts', 'number_of_daily_forecasts'];
-        numberFields.forEach(id => {
+        ['number_of_hourly_forecasts', 'number_of_daily_forecasts'].forEach(id => {
             const el = this.shadowRoot.getElementById(id);
-            if (el) {
-                el.addEventListener('change', () => {
-                    this._config = { ...this._config, [id]: parseInt(el.value) };
-                    this._fireConfigChanged();
-                });
-            }
+            if (el) el.addEventListener('change', () => {
+                this._config = { ...this._config, [id]: parseInt(el.value) };
+                this._fireConfigChanged();
+            });
         });
     }
 
     _fireConfigChanged() {
-        const event = new CustomEvent('config-changed', {
+        this.dispatchEvent(new CustomEvent('config-changed', {
             detail: { config: this._config },
-            bubbles: true,
-            composed: true,
-        });
-        this.dispatchEvent(event);
+            bubbles: true, composed: true,
+        }));
     }
 }
 
-// ── Register Custom Elements ─────────────────────────────────────
+// ── Register ─────────────────────────────────────────────────────
 
 customElements.define('meteo-france-card', MeteoFranceCard);
 customElements.define('meteo-france-card-editor', MeteoFranceCardEditor);
