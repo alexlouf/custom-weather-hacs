@@ -10,323 +10,323 @@ const CARD_VERSION = '1.0.0';
 
 // Weather condition to icon mapping (MDI icons)
 const WEATHER_ICONS = {
-  'clear-night': 'mdi:weather-night',
-  'cloudy': 'mdi:weather-cloudy',
-  'fog': 'mdi:weather-fog',
-  'hail': 'mdi:weather-hail',
-  'lightning': 'mdi:weather-lightning',
-  'lightning-rainy': 'mdi:weather-lightning-rainy',
-  'partlycloudy': 'mdi:weather-partly-cloudy',
-  'pouring': 'mdi:weather-pouring',
-  'rainy': 'mdi:weather-rainy',
-  'snowy': 'mdi:weather-snowy',
-  'snowy-rainy': 'mdi:weather-snowy-rainy',
-  'sunny': 'mdi:weather-sunny',
-  'windy': 'mdi:weather-windy',
-  'windy-variant': 'mdi:weather-windy-variant',
-  'exceptional': 'mdi:alert-circle-outline',
+    'clear-night': 'mdi:weather-night',
+    'cloudy': 'mdi:weather-cloudy',
+    'fog': 'mdi:weather-fog',
+    'hail': 'mdi:weather-hail',
+    'lightning': 'mdi:weather-lightning',
+    'lightning-rainy': 'mdi:weather-lightning-rainy',
+    'partlycloudy': 'mdi:weather-partly-cloudy',
+    'pouring': 'mdi:weather-pouring',
+    'rainy': 'mdi:weather-rainy',
+    'snowy': 'mdi:weather-snowy',
+    'snowy-rainy': 'mdi:weather-snowy-rainy',
+    'sunny': 'mdi:weather-sunny',
+    'windy': 'mdi:weather-windy',
+    'windy-variant': 'mdi:weather-windy-variant',
+    'exceptional': 'mdi:alert-circle-outline',
 };
 
 // French weather condition labels
 const WEATHER_LABELS_FR = {
-  'clear-night': 'Nuit dégagée',
-  'cloudy': 'Nuageux',
-  'fog': 'Brouillard',
-  'hail': 'Grêle',
-  'lightning': 'Orageux',
-  'lightning-rainy': 'Orage et pluie',
-  'partlycloudy': 'Partiellement nuageux',
-  'pouring': 'Fortes pluies',
-  'rainy': 'Pluvieux',
-  'snowy': 'Neigeux',
-  'snowy-rainy': 'Neige et pluie',
-  'sunny': 'Ensoleillé',
-  'windy': 'Venteux',
-  'windy-variant': 'Venteux et nuageux',
-  'exceptional': 'Exceptionnel',
+    'clear-night': 'Nuit dégagée',
+    'cloudy': 'Nuageux',
+    'fog': 'Brouillard',
+    'hail': 'Grêle',
+    'lightning': 'Orageux',
+    'lightning-rainy': 'Orage et pluie',
+    'partlycloudy': 'Partiellement nuageux',
+    'pouring': 'Fortes pluies',
+    'rainy': 'Pluvieux',
+    'snowy': 'Neigeux',
+    'snowy-rainy': 'Neige et pluie',
+    'sunny': 'Ensoleillé',
+    'windy': 'Venteux',
+    'windy-variant': 'Venteux et nuageux',
+    'exceptional': 'Exceptionnel',
 };
 
 // Rain intensity colors
 const RAIN_COLORS = {
-  1: { color: '#4FC3F7', label: 'Temps sec', intensity: 0 },        // Dry
-  2: { color: '#29B6F6', label: 'Pluie faible', intensity: 1 },      // Light rain
-  3: { color: '#0288D1', label: 'Pluie modérée', intensity: 2 },     // Moderate rain
-  4: { color: '#01579B', label: 'Pluie forte', intensity: 3 },       // Heavy rain
+    1: { color: '#4FC3F7', label: 'Temps sec', intensity: 0 },        // Dry
+    2: { color: '#29B6F6', label: 'Pluie faible', intensity: 1 },      // Light rain
+    3: { color: '#0288D1', label: 'Pluie modérée', intensity: 2 },     // Moderate rain
+    4: { color: '#01579B', label: 'Pluie forte', intensity: 3 },       // Heavy rain
 };
 
 // Rain description to intensity mapping
 const RAIN_DESC_MAP = {
-  'Temps sec': 1,
-  'Pluie faible': 2,
-  'Pluie modérée': 3,
-  'Pluie forte': 4,
+    'Temps sec': 1,
+    'Pluie faible': 2,
+    'Pluie modérée': 3,
+    'Pluie forte': 4,
 };
 
 // Alert colors
 const ALERT_COLORS = {
-  'Vert': '#4CAF50',
-  'Jaune': '#FFC107',
-  'Orange': '#FF9800',
-  'Rouge': '#F44336',
+    'Vert': '#4CAF50',
+    'Jaune': '#FFC107',
+    'Orange': '#FF9800',
+    'Rouge': '#F44336',
 };
 
 const ALERT_TYPES = {
-  'Vent violent': 'mdi:weather-windy',
-  'Pluie-inondation': 'mdi:weather-pouring',
-  'Orages': 'mdi:weather-lightning',
-  'Inondation': 'mdi:home-flood',
-  'Neige-verglas': 'mdi:snowflake-alert',
-  'Canicule': 'mdi:thermometer-alert',
-  'Grand Froid': 'mdi:snowflake',
-  'Avalanches': 'mdi:image-filter-hdr',
-  'Vagues-submersion': 'mdi:waves',
+    'Vent violent': 'mdi:weather-windy',
+    'Pluie-inondation': 'mdi:weather-pouring',
+    'Orages': 'mdi:weather-lightning',
+    'Inondation': 'mdi:home-flood',
+    'Neige-verglas': 'mdi:snowflake-alert',
+    'Canicule': 'mdi:thermometer-alert',
+    'Grand Froid': 'mdi:snowflake',
+    'Avalanches': 'mdi:image-filter-hdr',
+    'Vagues-submersion': 'mdi:waves',
 };
 
 // Wind direction labels
 const WIND_DIRECTIONS = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSO', 'SO', 'OSO', 'O', 'ONO', 'NO', 'NNO', 'N'];
 
 class MeteoFranceCard extends HTMLElement {
-  constructor() {
-    super();
-    this.attachShadow({ mode: 'open' });
-    this._config = {};
-    this._hass = null;
-    this._forecastSubscription = null;
-    this._hourlyForecastSubscription = null;
-    this._forecasts = [];
-    this._hourlyForecasts = [];
-  }
-
-  // ── HACS / Lovelace Interface ──────────────────────────────────
-
-  static getConfigElement() {
-    return document.createElement('meteo-france-card-editor');
-  }
-
-  static getStubConfig() {
-    return {
-      entity: '',
-      rain_forecast_entity: '',
-      alert_entity: '',
-      name: '',
-      show_current: true,
-      show_details: true,
-      show_rain_forecast: true,
-      show_alert: true,
-      show_daily_forecast: true,
-      show_hourly_forecast: true,
-      number_of_daily_forecasts: 5,
-      number_of_hourly_forecasts: 6,
-    };
-  }
-
-  setConfig(config) {
-    if (!config.entity) {
-      throw new Error('Veuillez définir une entité weather (entity)');
-    }
-    this._config = {
-      show_current: true,
-      show_details: true,
-      show_rain_forecast: true,
-      show_alert: true,
-      show_daily_forecast: true,
-      show_hourly_forecast: true,
-      number_of_daily_forecasts: 5,
-      number_of_hourly_forecasts: 6,
-      ...config,
-    };
-    this._render();
-  }
-
-  set hass(hass) {
-    const oldHass = this._hass;
-    this._hass = hass;
-
-    // Subscribe to forecast data if not already
-    if (hass && !this._forecastSubscription) {
-      this._subscribeForecast('daily');
-      this._subscribeForecast('hourly');
+    constructor() {
+        super();
+        this.attachShadow({ mode: 'open' });
+        this._config = {};
+        this._hass = null;
+        this._forecastSubscription = null;
+        this._hourlyForecastSubscription = null;
+        this._forecasts = [];
+        this._hourlyForecasts = [];
     }
 
-    this._render();
-  }
+    // ── HACS / Lovelace Interface ──────────────────────────────────
 
-  async _subscribeForecast(type) {
-    if (!this._hass || !this._config.entity) return;
+    static getConfigElement() {
+        return document.createElement('meteo-france-card-editor');
+    }
 
-    try {
-      const callback = (result) => {
-        if (type === 'daily') {
-          this._forecasts = result?.forecast || [];
-        } else {
-          this._hourlyForecasts = result?.forecast || [];
+    static getStubConfig() {
+        return {
+            entity: '',
+            rain_forecast_entity: '',
+            alert_entity: '',
+            name: '',
+            show_current: true,
+            show_details: true,
+            show_rain_forecast: true,
+            show_alert: true,
+            show_daily_forecast: true,
+            show_hourly_forecast: true,
+            number_of_daily_forecasts: 5,
+            number_of_hourly_forecasts: 6,
+        };
+    }
+
+    setConfig(config) {
+        if (!config.entity) {
+            throw new Error('Veuillez définir une entité weather (entity)');
         }
+        this._config = {
+            show_current: true,
+            show_details: true,
+            show_rain_forecast: true,
+            show_alert: true,
+            show_daily_forecast: true,
+            show_hourly_forecast: true,
+            number_of_daily_forecasts: 5,
+            number_of_hourly_forecasts: 6,
+            ...config,
+        };
         this._render();
-      };
-
-      const sub = await this._hass.connection.subscribeMessage(callback, {
-        type: 'weather/subscribe_forecast',
-        forecast_type: type,
-        entity_id: this._config.entity,
-      });
-
-      if (type === 'daily') {
-        this._forecastSubscription = sub;
-      } else {
-        this._hourlyForecastSubscription = sub;
-      }
-    } catch (e) {
-      console.warn(`MeteoFranceCard: Unable to subscribe to ${type} forecast:`, e);
-    }
-  }
-
-  disconnectedCallback() {
-    if (this._forecastSubscription) {
-      this._forecastSubscription();
-      this._forecastSubscription = null;
-    }
-    if (this._hourlyForecastSubscription) {
-      this._hourlyForecastSubscription();
-      this._hourlyForecastSubscription = null;
-    }
-  }
-
-  getCardSize() {
-    let size = 3;
-    if (this._config.show_rain_forecast) size += 2;
-    if (this._config.show_daily_forecast) size += 2;
-    if (this._config.show_hourly_forecast) size += 2;
-    return size;
-  }
-
-  // ── Helpers ────────────────────────────────────────────────────
-
-  _getWeatherEntity() {
-    return this._hass?.states[this._config.entity];
-  }
-
-  _getRainForecastEntity() {
-    if (this._config.rain_forecast_entity) {
-      return this._hass?.states[this._config.rain_forecast_entity];
-    }
-    return null;
-  }
-
-  _getAlertEntity() {
-    if (this._config.alert_entity) {
-      return this._hass?.states[this._config.alert_entity];
-    }
-    return null;
-  }
-
-  _getDetailEntity(key) {
-    const entityId = this._config[key];
-    if (entityId) {
-      return this._hass?.states[entityId];
-    }
-    return null;
-  }
-
-  _getWindDirection(bearing) {
-    if (bearing === undefined || bearing === null) return '';
-    const index = Math.round(bearing / 22.5);
-    return WIND_DIRECTIONS[index] || '';
-  }
-
-  _formatTime(dateStr) {
-    const date = new Date(dateStr);
-    return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-  }
-
-  _formatDay(dateStr) {
-    const date = new Date(dateStr);
-    const today = new Date();
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    if (date.toDateString() === today.toDateString()) return "Aujourd'hui";
-    if (date.toDateString() === tomorrow.toDateString()) return 'Demain';
-
-    return date.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' });
-  }
-
-  // ── Rain Forecast Parsing ──────────────────────────────────────
-
-  _parseRainForecast() {
-    const entity = this._getRainForecastEntity();
-    if (!entity) return null;
-
-    const attrs = entity.attributes;
-    const forecast = attrs['1_hour_forecast'];
-    const refTime = attrs['forecast_time_ref'];
-
-    if (!forecast) return null;
-
-    const entries = [];
-    for (const [time, description] of Object.entries(forecast)) {
-      const minutes = parseInt(time);
-      const intensity = RAIN_DESC_MAP[description] || 1;
-      entries.push({ minutes, description, intensity });
     }
 
-    entries.sort((a, b) => a.minutes - b.minutes);
+    set hass(hass) {
+        const oldHass = this._hass;
+        this._hass = hass;
 
-    return {
-      refTime,
-      entries,
-      hasRain: entries.some(e => e.intensity > 1),
-    };
-  }
-
-  // ── Alert Parsing ──────────────────────────────────────────────
-
-  _parseAlerts() {
-    const entity = this._getAlertEntity();
-    if (!entity) return null;
-
-    const attrs = entity.attributes;
-    const alerts = [];
-
-    for (const [key, value] of Object.entries(attrs)) {
-      if (key.startsWith('Vent') || key.startsWith('Pluie') || key.startsWith('Orage') ||
-          key.startsWith('Inondation') || key.startsWith('Neige') || key.startsWith('Canicule') ||
-          key.startsWith('Grand') || key.startsWith('Avalanche') || key.startsWith('Vagues')) {
-        if (value && value !== 'Vert') {
-          alerts.push({ type: key, level: value });
+        // Subscribe to forecast data if not already
+        if (hass && !this._forecastSubscription) {
+            this._subscribeForecast('daily');
+            this._subscribeForecast('hourly');
         }
-      }
+
+        this._render();
     }
 
-    return {
-      state: entity.state,
-      alerts,
-    };
-  }
+    async _subscribeForecast(type) {
+        if (!this._hass || !this._config.entity) return;
 
-  // ── Render ─────────────────────────────────────────────────────
+        try {
+            const callback = (result) => {
+                if (type === 'daily') {
+                    this._forecasts = result?.forecast || [];
+                } else {
+                    this._hourlyForecasts = result?.forecast || [];
+                }
+                this._render();
+            };
 
-  _render() {
-    if (!this._hass || !this._config.entity) return;
+            const sub = await this._hass.connection.subscribeMessage(callback, {
+                type: 'weather/subscribe_forecast',
+                forecast_type: type,
+                entity_id: this._config.entity,
+            });
 
-    const entity = this._getWeatherEntity();
-    if (!entity) {
-      this.shadowRoot.innerHTML = `
+            if (type === 'daily') {
+                this._forecastSubscription = sub;
+            } else {
+                this._hourlyForecastSubscription = sub;
+            }
+        } catch (e) {
+            console.warn(`MeteoFranceCard: Unable to subscribe to ${type} forecast:`, e);
+        }
+    }
+
+    disconnectedCallback() {
+        if (this._forecastSubscription) {
+            this._forecastSubscription();
+            this._forecastSubscription = null;
+        }
+        if (this._hourlyForecastSubscription) {
+            this._hourlyForecastSubscription();
+            this._hourlyForecastSubscription = null;
+        }
+    }
+
+    getCardSize() {
+        let size = 3;
+        if (this._config.show_rain_forecast) size += 2;
+        if (this._config.show_daily_forecast) size += 2;
+        if (this._config.show_hourly_forecast) size += 2;
+        return size;
+    }
+
+    // ── Helpers ────────────────────────────────────────────────────
+
+    _getWeatherEntity() {
+        return this._hass?.states[this._config.entity];
+    }
+
+    _getRainForecastEntity() {
+        if (this._config.rain_forecast_entity) {
+            return this._hass?.states[this._config.rain_forecast_entity];
+        }
+        return null;
+    }
+
+    _getAlertEntity() {
+        if (this._config.alert_entity) {
+            return this._hass?.states[this._config.alert_entity];
+        }
+        return null;
+    }
+
+    _getDetailEntity(key) {
+        const entityId = this._config[key];
+        if (entityId) {
+            return this._hass?.states[entityId];
+        }
+        return null;
+    }
+
+    _getWindDirection(bearing) {
+        if (bearing === undefined || bearing === null) return '';
+        const index = Math.round(bearing / 22.5);
+        return WIND_DIRECTIONS[index] || '';
+    }
+
+    _formatTime(dateStr) {
+        const date = new Date(dateStr);
+        return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    _formatDay(dateStr) {
+        const date = new Date(dateStr);
+        const today = new Date();
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+
+        if (date.toDateString() === today.toDateString()) return "Aujourd'hui";
+        if (date.toDateString() === tomorrow.toDateString()) return 'Demain';
+
+        return date.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' });
+    }
+
+    // ── Rain Forecast Parsing ──────────────────────────────────────
+
+    _parseRainForecast() {
+        const entity = this._getRainForecastEntity();
+        if (!entity) return null;
+
+        const attrs = entity.attributes;
+        const forecast = attrs['1_hour_forecast'];
+        const refTime = attrs['forecast_time_ref'];
+
+        if (!forecast) return null;
+
+        const entries = [];
+        for (const [time, description] of Object.entries(forecast)) {
+            const minutes = parseInt(time);
+            const intensity = RAIN_DESC_MAP[description] || 1;
+            entries.push({ minutes, description, intensity });
+        }
+
+        entries.sort((a, b) => a.minutes - b.minutes);
+
+        return {
+            refTime,
+            entries,
+            hasRain: entries.some(e => e.intensity > 1),
+        };
+    }
+
+    // ── Alert Parsing ──────────────────────────────────────────────
+
+    _parseAlerts() {
+        const entity = this._getAlertEntity();
+        if (!entity) return null;
+
+        const attrs = entity.attributes;
+        const alerts = [];
+
+        for (const [key, value] of Object.entries(attrs)) {
+            if (key.startsWith('Vent') || key.startsWith('Pluie') || key.startsWith('Orage') ||
+                key.startsWith('Inondation') || key.startsWith('Neige') || key.startsWith('Canicule') ||
+                key.startsWith('Grand') || key.startsWith('Avalanche') || key.startsWith('Vagues')) {
+                if (value && value !== 'Vert') {
+                    alerts.push({ type: key, level: value });
+                }
+            }
+        }
+
+        return {
+            state: entity.state,
+            alerts,
+        };
+    }
+
+    // ── Render ─────────────────────────────────────────────────────
+
+    _render() {
+        if (!this._hass || !this._config.entity) return;
+
+        const entity = this._getWeatherEntity();
+        if (!entity) {
+            this.shadowRoot.innerHTML = `
         <ha-card>
           <div style="padding: 16px; color: var(--error-color);">
             Entité introuvable : ${this._config.entity}
           </div>
         </ha-card>
       `;
-      return;
-    }
+            return;
+        }
 
-    const attrs = entity.attributes;
-    const state = entity.state;
-    const name = this._config.name || attrs.friendly_name || 'Météo';
-    const rainData = this._parseRainForecast();
-    const alertData = this._parseAlerts();
+        const attrs = entity.attributes;
+        const state = entity.state;
+        const name = this._config.name || attrs.friendly_name || 'Météo';
+        const rainData = this._parseRainForecast();
+        const alertData = this._parseAlerts();
 
-    this.shadowRoot.innerHTML = `
+        this.shadowRoot.innerHTML = `
       <style>${this._getStyles()}</style>
       <ha-card>
         ${this._renderHeader(name)}
@@ -338,50 +338,50 @@ class MeteoFranceCard extends HTMLElement {
         ${this._config.show_daily_forecast ? this._renderDailyForecast() : ''}
       </ha-card>
     `;
-  }
+    }
 
-  // ── Render Sections ────────────────────────────────────────────
+    // ── Render Sections ────────────────────────────────────────────
 
-  _renderHeader(name) {
-    return `
+    _renderHeader(name) {
+        return `
       <div class="card-header">
         <span class="header-title">${name}</span>
         <span class="header-subtitle">Météo-France</span>
       </div>
     `;
-  }
+    }
 
-  _renderAlerts(alertData) {
-    if (!alertData || alertData.alerts.length === 0) return '';
+    _renderAlerts(alertData) {
+        if (!alertData || alertData.alerts.length === 0) return '';
 
-    const alertsHtml = alertData.alerts.map(alert => {
-      const color = ALERT_COLORS[alert.level] || '#FFC107';
-      const icon = ALERT_TYPES[alert.type] || 'mdi:alert';
-      return `
+        const alertsHtml = alertData.alerts.map(alert => {
+            const color = ALERT_COLORS[alert.level] || '#FFC107';
+            const icon = ALERT_TYPES[alert.type] || 'mdi:alert';
+            return `
         <div class="alert-chip" style="--alert-color: ${color}">
           <ha-icon icon="${icon}"></ha-icon>
           <span>${alert.type}</span>
           <span class="alert-level">${alert.level}</span>
         </div>
       `;
-    }).join('');
+        }).join('');
 
-    return `
+        return `
       <div class="alerts-section">
         ${alertsHtml}
       </div>
     `;
-  }
+    }
 
-  _renderCurrent(state, attrs) {
-    const icon = WEATHER_ICONS[state] || 'mdi:weather-cloudy';
-    const label = WEATHER_LABELS_FR[state] || state;
-    const temp = attrs.temperature !== undefined ? Math.round(attrs.temperature) : '--';
-    const unit = attrs.temperature_unit || '°C';
-    const apparentTemp = attrs.apparent_temperature !== undefined
-      ? Math.round(attrs.apparent_temperature) : null;
+    _renderCurrent(state, attrs) {
+        const icon = WEATHER_ICONS[state] || 'mdi:weather-cloudy';
+        const label = WEATHER_LABELS_FR[state] || state;
+        const temp = attrs.temperature !== undefined ? Math.round(attrs.temperature) : '--';
+        const unit = attrs.temperature_unit || '°C';
+        const apparentTemp = attrs.apparent_temperature !== undefined
+            ? Math.round(attrs.apparent_temperature) : null;
 
-    return `
+        return `
       <div class="current-section">
         <div class="current-main">
           <div class="current-icon">
@@ -398,116 +398,116 @@ class MeteoFranceCard extends HTMLElement {
         </div>
       </div>
     `;
-  }
-
-  _renderDetails(attrs) {
-    const details = [];
-
-    if (attrs.humidity !== undefined) {
-      details.push({
-        icon: 'mdi:water-percent',
-        label: 'Humidité',
-        value: `${attrs.humidity}%`,
-      });
     }
 
-    if (attrs.pressure !== undefined) {
-      details.push({
-        icon: 'mdi:gauge',
-        label: 'Pression',
-        value: `${attrs.pressure} ${attrs.pressure_unit || 'hPa'}`,
-      });
-    }
+    _renderDetails(attrs) {
+        const details = [];
 
-    if (attrs.wind_speed !== undefined) {
-      const dir = this._getWindDirection(attrs.wind_bearing);
-      details.push({
-        icon: 'mdi:weather-windy',
-        label: 'Vent',
-        value: `${Math.round(attrs.wind_speed)} ${attrs.wind_speed_unit || 'km/h'} ${dir}`,
-      });
-    }
+        if (attrs.humidity !== undefined) {
+            details.push({
+                icon: 'mdi:water-percent',
+                label: 'Humidité',
+                value: `${attrs.humidity}%`,
+            });
+        }
 
-    if (attrs.wind_gust_speed !== undefined) {
-      details.push({
-        icon: 'mdi:weather-windy-variant',
-        label: 'Rafales',
-        value: `${Math.round(attrs.wind_gust_speed)} ${attrs.wind_speed_unit || 'km/h'}`,
-      });
-    }
+        if (attrs.pressure !== undefined) {
+            details.push({
+                icon: 'mdi:gauge',
+                label: 'Pression',
+                value: `${attrs.pressure} ${attrs.pressure_unit || 'hPa'}`,
+            });
+        }
 
-    if (attrs.visibility !== undefined) {
-      details.push({
-        icon: 'mdi:eye',
-        label: 'Visibilité',
-        value: `${attrs.visibility} ${attrs.visibility_unit || 'km'}`,
-      });
-    }
+        if (attrs.wind_speed !== undefined) {
+            const dir = this._getWindDirection(attrs.wind_bearing);
+            details.push({
+                icon: 'mdi:weather-windy',
+                label: 'Vent',
+                value: `${Math.round(attrs.wind_speed)} ${attrs.wind_speed_unit || 'km/h'} ${dir}`,
+            });
+        }
 
-    if (attrs.uv_index !== undefined) {
-      details.push({
-        icon: 'mdi:sun-wireless',
-        label: 'UV',
-        value: attrs.uv_index,
-      });
-    }
+        if (attrs.wind_gust_speed !== undefined) {
+            details.push({
+                icon: 'mdi:weather-windy-variant',
+                label: 'Rafales',
+                value: `${Math.round(attrs.wind_gust_speed)} ${attrs.wind_speed_unit || 'km/h'}`,
+            });
+        }
 
-    if (attrs.cloud_coverage !== undefined) {
-      details.push({
-        icon: 'mdi:cloud',
-        label: 'Nébulosité',
-        value: `${attrs.cloud_coverage}%`,
-      });
-    }
+        if (attrs.visibility !== undefined) {
+            details.push({
+                icon: 'mdi:eye',
+                label: 'Visibilité',
+                value: `${attrs.visibility} ${attrs.visibility_unit || 'km'}`,
+            });
+        }
 
-    if (attrs.dew_point !== undefined) {
-      details.push({
-        icon: 'mdi:thermometer-water',
-        label: 'Point de rosée',
-        value: `${Math.round(attrs.dew_point)}°`,
-      });
-    }
+        if (attrs.uv_index !== undefined) {
+            details.push({
+                icon: 'mdi:sun-wireless',
+                label: 'UV',
+                value: attrs.uv_index,
+            });
+        }
 
-    // Additional Météo-France entities
-    const rainChance = this._getDetailEntity('rain_chance_entity');
-    if (rainChance) {
-      details.push({
-        icon: 'mdi:umbrella',
-        label: 'Risque pluie',
-        value: `${rainChance.state}%`,
-      });
-    }
+        if (attrs.cloud_coverage !== undefined) {
+            details.push({
+                icon: 'mdi:cloud',
+                label: 'Nébulosité',
+                value: `${attrs.cloud_coverage}%`,
+            });
+        }
 
-    const freezeChance = this._getDetailEntity('freeze_chance_entity');
-    if (freezeChance) {
-      details.push({
-        icon: 'mdi:snowflake',
-        label: 'Risque gel',
-        value: `${freezeChance.state}%`,
-      });
-    }
+        if (attrs.dew_point !== undefined) {
+            details.push({
+                icon: 'mdi:thermometer-water',
+                label: 'Point de rosée',
+                value: `${Math.round(attrs.dew_point)}°`,
+            });
+        }
 
-    const snowChance = this._getDetailEntity('snow_chance_entity');
-    if (snowChance) {
-      details.push({
-        icon: 'mdi:snowflake-variant',
-        label: 'Risque neige',
-        value: `${snowChance.state}%`,
-      });
-    }
+        // Additional Météo-France entities
+        const rainChance = this._getDetailEntity('rain_chance_entity');
+        if (rainChance) {
+            details.push({
+                icon: 'mdi:umbrella',
+                label: 'Risque pluie',
+                value: `${rainChance.state}%`,
+            });
+        }
 
-    const uvEntity = this._getDetailEntity('uv_entity');
-    if (uvEntity && attrs.uv_index === undefined) {
-      details.push({
-        icon: 'mdi:sun-wireless',
-        label: 'UV',
-        value: uvEntity.state,
-      });
-    }
+        const freezeChance = this._getDetailEntity('freeze_chance_entity');
+        if (freezeChance) {
+            details.push({
+                icon: 'mdi:snowflake',
+                label: 'Risque gel',
+                value: `${freezeChance.state}%`,
+            });
+        }
 
-    if (details.length === 0) return '';
+        const snowChance = this._getDetailEntity('snow_chance_entity');
+        if (snowChance) {
+            details.push({
+                icon: 'mdi:snowflake-variant',
+                label: 'Risque neige',
+                value: `${snowChance.state}%`,
+            });
+        }
 
-    const detailsHtml = details.map(d => `
+        const uvEntity = this._getDetailEntity('uv_entity');
+        if (uvEntity && attrs.uv_index === undefined) {
+            details.push({
+                icon: 'mdi:sun-wireless',
+                label: 'UV',
+                value: uvEntity.state,
+            });
+        }
+
+        if (details.length === 0) return '';
+
+        const detailsHtml = details.map(d => `
       <div class="detail-item">
         <ha-icon icon="${d.icon}"></ha-icon>
         <div class="detail-content">
@@ -517,17 +517,17 @@ class MeteoFranceCard extends HTMLElement {
       </div>
     `).join('');
 
-    return `
+        return `
       <div class="details-section">
         <div class="details-grid">${detailsHtml}</div>
       </div>
     `;
-  }
+    }
 
-  _renderRainForecast(rainData) {
-    if (!rainData) {
-      if (this._config.rain_forecast_entity) {
-        return `
+    _renderRainForecast(rainData) {
+        if (!rainData) {
+            if (this._config.rain_forecast_entity) {
+                return `
           <div class="rain-section">
             <div class="section-title">
               <ha-icon icon="mdi:weather-rainy"></ha-icon>
@@ -536,35 +536,35 @@ class MeteoFranceCard extends HTMLElement {
             <div class="rain-unavailable">Données indisponibles</div>
           </div>
         `;
-      }
-      return '';
-    }
+            }
+            return '';
+        }
 
-    const refTime = rainData.refTime ? this._formatTime(rainData.refTime) : '';
+        const refTime = rainData.refTime ? this._formatTime(rainData.refTime) : '';
 
-    // Build the rain timeline bars
-    const barsHtml = rainData.entries.map((entry, index) => {
-      const intensity = entry.intensity;
-      let barColor;
-      let barHeight;
+        // Build the rain timeline bars
+        const barsHtml = rainData.entries.map((entry, index) => {
+            const intensity = entry.intensity;
+            let barColor;
+            let barHeight;
 
-      switch (intensity) {
-        case 1: barColor = 'var(--rain-dry-color, #E0E0E0)'; barHeight = '8%'; break;
-        case 2: barColor = 'var(--rain-light-color, #64B5F6)'; barHeight = '40%'; break;
-        case 3: barColor = 'var(--rain-moderate-color, #1E88E5)'; barHeight = '70%'; break;
-        case 4: barColor = 'var(--rain-heavy-color, #0D47A1)'; barHeight = '100%'; break;
-        default: barColor = 'var(--rain-dry-color, #E0E0E0)'; barHeight = '8%';
-      }
+            switch (intensity) {
+                case 1: barColor = 'var(--rain-dry-color, #E0E0E0)'; barHeight = '8%'; break;
+                case 2: barColor = 'var(--rain-light-color, #64B5F6)'; barHeight = '40%'; break;
+                case 3: barColor = 'var(--rain-moderate-color, #1E88E5)'; barHeight = '70%'; break;
+                case 4: barColor = 'var(--rain-heavy-color, #0D47A1)'; barHeight = '100%'; break;
+                default: barColor = 'var(--rain-dry-color, #E0E0E0)'; barHeight = '8%';
+            }
 
-      return `
+            return `
         <div class="rain-bar-container" title="${entry.description} (${entry.minutes} min)">
           <div class="rain-bar" style="height: ${barHeight}; background: ${barColor};"></div>
         </div>
       `;
-    }).join('');
+        }).join('');
 
-    // Time labels
-    const timeLabelsHtml = `
+        // Time labels
+        const timeLabelsHtml = `
       <span>Maint.</span>
       <span>+15 min</span>
       <span>+30 min</span>
@@ -572,12 +572,12 @@ class MeteoFranceCard extends HTMLElement {
       <span>+60 min</span>
     `;
 
-    // Status text
-    const statusText = rainData.hasRain
-      ? '🌧️ Pluie prévue dans l\'heure'
-      : '☀️ Pas de pluie dans l\'heure';
+        // Status text
+        const statusText = rainData.hasRain
+            ? '🌧️ Pluie prévue dans l\'heure'
+            : '☀️ Pas de pluie dans l\'heure';
 
-    return `
+        return `
       <div class="rain-section">
         <div class="section-title">
           <ha-icon icon="mdi:weather-rainy"></ha-icon>
@@ -607,22 +607,22 @@ class MeteoFranceCard extends HTMLElement {
         </div>
       </div>
     `;
-  }
+    }
 
-  _renderHourlyForecast() {
-    if (!this._hourlyForecasts || this._hourlyForecasts.length === 0) return '';
+    _renderHourlyForecast() {
+        if (!this._hourlyForecasts || this._hourlyForecasts.length === 0) return '';
 
-    const count = this._config.number_of_hourly_forecasts || 6;
-    const forecasts = this._hourlyForecasts.slice(0, count);
+        const count = this._config.number_of_hourly_forecasts || 6;
+        const forecasts = this._hourlyForecasts.slice(0, count);
 
-    const itemsHtml = forecasts.map(fc => {
-      const icon = WEATHER_ICONS[fc.condition] || 'mdi:weather-cloudy';
-      const temp = fc.temperature !== undefined ? Math.round(fc.temperature) : '--';
-      const time = this._formatTime(fc.datetime);
-      const precip = fc.precipitation_probability !== undefined
-        ? `${fc.precipitation_probability}%` : '';
+        const itemsHtml = forecasts.map(fc => {
+            const icon = WEATHER_ICONS[fc.condition] || 'mdi:weather-cloudy';
+            const temp = fc.temperature !== undefined ? Math.round(fc.temperature) : '--';
+            const time = this._formatTime(fc.datetime);
+            const precip = fc.precipitation_probability !== undefined
+                ? `${fc.precipitation_probability}%` : '';
 
-      return `
+            return `
         <div class="hourly-item">
           <span class="hourly-time">${time}</span>
           <ha-icon icon="${icon}"></ha-icon>
@@ -630,9 +630,9 @@ class MeteoFranceCard extends HTMLElement {
           ${precip ? `<span class="hourly-precip"><ha-icon icon="mdi:umbrella" style="--mdc-icon-size: 12px;"></ha-icon>${precip}</span>` : ''}
         </div>
       `;
-    }).join('');
+        }).join('');
 
-    return `
+        return `
       <div class="hourly-section">
         <div class="section-title">
           <ha-icon icon="mdi:clock-outline"></ha-icon>
@@ -641,23 +641,23 @@ class MeteoFranceCard extends HTMLElement {
         <div class="hourly-scroll">${itemsHtml}</div>
       </div>
     `;
-  }
+    }
 
-  _renderDailyForecast() {
-    if (!this._forecasts || this._forecasts.length === 0) return '';
+    _renderDailyForecast() {
+        if (!this._forecasts || this._forecasts.length === 0) return '';
 
-    const count = this._config.number_of_daily_forecasts || 5;
-    const forecasts = this._forecasts.slice(0, count);
+        const count = this._config.number_of_daily_forecasts || 5;
+        const forecasts = this._forecasts.slice(0, count);
 
-    const itemsHtml = forecasts.map(fc => {
-      const icon = WEATHER_ICONS[fc.condition] || 'mdi:weather-cloudy';
-      const tempHigh = fc.temperature !== undefined ? Math.round(fc.temperature) : '--';
-      const tempLow = fc.templow !== undefined ? Math.round(fc.templow) : '--';
-      const day = this._formatDay(fc.datetime);
-      const precip = fc.precipitation_probability !== undefined
-        ? `${fc.precipitation_probability}%` : '';
+        const itemsHtml = forecasts.map(fc => {
+            const icon = WEATHER_ICONS[fc.condition] || 'mdi:weather-cloudy';
+            const tempHigh = fc.temperature !== undefined ? Math.round(fc.temperature) : '--';
+            const tempLow = fc.templow !== undefined ? Math.round(fc.templow) : '--';
+            const day = this._formatDay(fc.datetime);
+            const precip = fc.precipitation_probability !== undefined
+                ? `${fc.precipitation_probability}%` : '';
 
-      return `
+            return `
         <div class="daily-item">
           <span class="daily-day">${day}</span>
           <ha-icon icon="${icon}"></ha-icon>
@@ -668,9 +668,9 @@ class MeteoFranceCard extends HTMLElement {
           </span>
         </div>
       `;
-    }).join('');
+        }).join('');
 
-    return `
+        return `
       <div class="daily-section">
         <div class="section-title">
           <ha-icon icon="mdi:calendar-week"></ha-icon>
@@ -679,12 +679,12 @@ class MeteoFranceCard extends HTMLElement {
         ${itemsHtml}
       </div>
     `;
-  }
+    }
 
-  // ── Styles ─────────────────────────────────────────────────────
+    // ── Styles ─────────────────────────────────────────────────────
 
-  _getStyles() {
-    return `
+    _getStyles() {
+        return `
       :host {
         --mf-primary: var(--primary-text-color, #212121);
         --mf-secondary: var(--secondary-text-color, #727272);
@@ -770,7 +770,7 @@ class MeteoFranceCard extends HTMLElement {
 
       .current-icon ha-icon {
         --mdc-icon-size: 52px;
-        color: var(--mf-accent);
+        color: var(--state-icon-color, var(--paper-item-icon-color, #44739e));
       }
 
       .current-temp {
@@ -1020,7 +1020,7 @@ class MeteoFranceCard extends HTMLElement {
 
       .hourly-item ha-icon {
         --mdc-icon-size: 24px;
-        color: var(--mf-accent);
+        color: var(--state-icon-color, var(--paper-item-icon-color, #44739e));
       }
 
       .hourly-temp {
@@ -1071,7 +1071,7 @@ class MeteoFranceCard extends HTMLElement {
 
       .daily-item ha-icon {
         --mdc-icon-size: 22px;
-        color: var(--mf-accent);
+        color: var(--state-icon-color, var(--paper-item-icon-color, #44739e));
         flex-shrink: 0;
       }
 
@@ -1112,30 +1112,30 @@ class MeteoFranceCard extends HTMLElement {
         text-align: right;
       }
     `;
-  }
+    }
 }
 
 // ── Card Editor ──────────────────────────────────────────────────
 
 class MeteoFranceCardEditor extends HTMLElement {
-  constructor() {
-    super();
-    this.attachShadow({ mode: 'open' });
-    this._config = {};
-    this._hass = null;
-  }
+    constructor() {
+        super();
+        this.attachShadow({ mode: 'open' });
+        this._config = {};
+        this._hass = null;
+    }
 
-  set hass(hass) {
-    this._hass = hass;
-  }
+    set hass(hass) {
+        this._hass = hass;
+    }
 
-  setConfig(config) {
-    this._config = config;
-    this._render();
-  }
+    setConfig(config) {
+        this._config = config;
+        this._render();
+    }
 
-  _render() {
-    this.shadowRoot.innerHTML = `
+    _render() {
+        this.shadowRoot.innerHTML = `
       <style>
         .editor-row {
           display: flex;
@@ -1280,55 +1280,55 @@ class MeteoFranceCardEditor extends HTMLElement {
       </div>
     `;
 
-    // Bind events
-    const textFields = [
-      'entity', 'rain_forecast_entity', 'alert_entity', 'name',
-      'rain_chance_entity', 'freeze_chance_entity', 'snow_chance_entity', 'uv_entity'
-    ];
-    textFields.forEach(id => {
-      const el = this.shadowRoot.getElementById(id);
-      if (el) {
-        el.addEventListener('change', () => {
-          this._config = { ...this._config, [id]: el.value };
-          this._fireConfigChanged();
+        // Bind events
+        const textFields = [
+            'entity', 'rain_forecast_entity', 'alert_entity', 'name',
+            'rain_chance_entity', 'freeze_chance_entity', 'snow_chance_entity', 'uv_entity'
+        ];
+        textFields.forEach(id => {
+            const el = this.shadowRoot.getElementById(id);
+            if (el) {
+                el.addEventListener('change', () => {
+                    this._config = { ...this._config, [id]: el.value };
+                    this._fireConfigChanged();
+                });
+            }
         });
-      }
-    });
 
-    const checkboxFields = [
-      'show_current', 'show_details', 'show_rain_forecast',
-      'show_alert', 'show_hourly_forecast', 'show_daily_forecast'
-    ];
-    checkboxFields.forEach(id => {
-      const el = this.shadowRoot.getElementById(id);
-      if (el) {
-        el.addEventListener('change', () => {
-          this._config = { ...this._config, [id]: el.checked };
-          this._fireConfigChanged();
+        const checkboxFields = [
+            'show_current', 'show_details', 'show_rain_forecast',
+            'show_alert', 'show_hourly_forecast', 'show_daily_forecast'
+        ];
+        checkboxFields.forEach(id => {
+            const el = this.shadowRoot.getElementById(id);
+            if (el) {
+                el.addEventListener('change', () => {
+                    this._config = { ...this._config, [id]: el.checked };
+                    this._fireConfigChanged();
+                });
+            }
         });
-      }
-    });
 
-    const numberFields = ['number_of_hourly_forecasts', 'number_of_daily_forecasts'];
-    numberFields.forEach(id => {
-      const el = this.shadowRoot.getElementById(id);
-      if (el) {
-        el.addEventListener('change', () => {
-          this._config = { ...this._config, [id]: parseInt(el.value) };
-          this._fireConfigChanged();
+        const numberFields = ['number_of_hourly_forecasts', 'number_of_daily_forecasts'];
+        numberFields.forEach(id => {
+            const el = this.shadowRoot.getElementById(id);
+            if (el) {
+                el.addEventListener('change', () => {
+                    this._config = { ...this._config, [id]: parseInt(el.value) };
+                    this._fireConfigChanged();
+                });
+            }
         });
-      }
-    });
-  }
+    }
 
-  _fireConfigChanged() {
-    const event = new CustomEvent('config-changed', {
-      detail: { config: this._config },
-      bubbles: true,
-      composed: true,
-    });
-    this.dispatchEvent(event);
-  }
+    _fireConfigChanged() {
+        const event = new CustomEvent('config-changed', {
+            detail: { config: this._config },
+            bubbles: true,
+            composed: true,
+        });
+        this.dispatchEvent(event);
+    }
 }
 
 // ── Register Custom Elements ─────────────────────────────────────
@@ -1338,15 +1338,15 @@ customElements.define('meteo-france-card-editor', MeteoFranceCardEditor);
 
 window.customCards = window.customCards || [];
 window.customCards.push({
-  type: 'meteo-france-card',
-  name: 'Carte Météo France',
-  description: 'Carte météo avec données Météo-France et pluie dans l\'heure',
-  preview: true,
-  documentationURL: 'https://github.com/your-repo/meteo-france-card',
+    type: 'meteo-france-card',
+    name: 'Carte Météo France',
+    description: 'Carte météo avec données Météo-France et pluie dans l\'heure',
+    preview: true,
+    documentationURL: 'https://github.com/your-repo/meteo-france-card',
 });
 
 console.info(
-  `%c  METEO-FRANCE-CARD  %c  v${CARD_VERSION}  `,
-  'color: white; background: #0288D1; font-weight: bold; padding: 2px 6px; border-radius: 4px 0 0 4px;',
-  'color: #0288D1; background: #E1F5FE; font-weight: bold; padding: 2px 6px; border-radius: 0 4px 4px 0;'
+    `%c  METEO-FRANCE-CARD  %c  v${CARD_VERSION}  `,
+    'color: white; background: #0288D1; font-weight: bold; padding: 2px 6px; border-radius: 4px 0 0 4px;',
+    'color: #0288D1; background: #E1F5FE; font-weight: bold; padding: 2px 6px; border-radius: 0 4px 4px 0;'
 );
