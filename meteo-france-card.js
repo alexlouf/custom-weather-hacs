@@ -1,14 +1,16 @@
+
 /**
  * Météo France Card - Custom Lovelace Card for Home Assistant
  * Displays Météo-France weather data with "pluie dans l'heure" rain timeline
+ * Compact mode with popups on click
  *
- * @version 1.2.0
+ * @version 2.0.0
  * @license MIT
  */
 
-const CARD_VERSION = '1.2.0';
+const CARD_VERSION = '2.0.0';
 
-// Weather condition → emoji icon (same as the default HA weather card style)
+// Weather condition → emoji icon
 const WEATHER_ICONS = {
     'clear-night': '🌙',
     'cloudy': '☁️',
@@ -27,7 +29,6 @@ const WEATHER_ICONS = {
     'exceptional': '⚠️',
 };
 
-// French weather condition labels
 const WEATHER_LABELS_FR = {
     'clear-night': 'Nuit dégagée',
     'cloudy': 'Nuageux',
@@ -81,6 +82,7 @@ class MeteoFranceCard extends HTMLElement {
         this._hourlyForecastSubscription = null;
         this._forecasts = [];
         this._hourlyForecasts = [];
+        this._activePopup = null;
     }
 
     static getConfigElement() { return document.createElement('meteo-france-card-editor'); }
@@ -138,13 +140,7 @@ class MeteoFranceCard extends HTMLElement {
         if (this._hourlyForecastSubscription) { this._hourlyForecastSubscription(); this._hourlyForecastSubscription = null; }
     }
 
-    getCardSize() {
-        let s = 3;
-        if (this._config.show_rain_forecast) s += 2;
-        if (this._config.show_daily_forecast) s += 2;
-        if (this._config.show_hourly_forecast) s += 2;
-        return s;
-    }
+    getCardSize() { return 3; }
 
     // ── Helpers ────────────────────────────────────────────────────
 
@@ -169,6 +165,33 @@ class MeteoFranceCard extends HTMLElement {
     }
 
     _icon(condition) { return WEATHER_ICONS[condition] || '☁️'; }
+
+    // ── Popup management ───────────────────────────────────────────
+
+    _showPopup(popupId) {
+        this._activePopup = popupId;
+        this._render();
+        // Add closing animation listener
+        requestAnimationFrame(() => {
+            const overlay = this.shadowRoot.querySelector('.popup-overlay');
+            if (overlay) overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) this._closePopup();
+            });
+            const closeBtn = this.shadowRoot.querySelector('.popup-close');
+            if (closeBtn) closeBtn.addEventListener('click', () => this._closePopup());
+        });
+    }
+
+    _closePopup() {
+        const popup = this.shadowRoot.querySelector('.popup-content');
+        const overlay = this.shadowRoot.querySelector('.popup-overlay');
+        if (popup) popup.classList.add('closing');
+        if (overlay) overlay.classList.add('closing');
+        setTimeout(() => {
+            this._activePopup = null;
+            this._render();
+        }, 200);
+    }
 
     // ── Rain ───────────────────────────────────────────────────────
 
@@ -215,50 +238,166 @@ class MeteoFranceCard extends HTMLElement {
         this.shadowRoot.innerHTML = `
       <style>${this._css()}</style>
       <ha-card>
-        ${this._hHeader(name)}
-        ${this._config.show_alert ? this._hAlerts(alerts) : ''}
-        ${this._config.show_current ? this._hCurrent(state, a) : ''}
-        ${this._config.show_details ? this._hDetails(a) : ''}
-        ${this._config.show_rain_forecast ? this._hRain(rain) : ''}
-        ${this._config.show_hourly_forecast ? this._hHourly() : ''}
-        ${this._config.show_daily_forecast ? this._hDaily() : ''}
+        ${this._hCompactView(name, state, a, rain, alerts)}
+        ${this._activePopup ? this._hPopup(state, a, rain, alerts) : ''}
       </ha-card>
     `;
+
+        this._bindEvents();
     }
 
-    _hHeader(name) {
-        return `<div class="card-header"><span class="header-title">${name}</span><span class="header-sub">Météo-France</span></div>`;
+    _bindEvents() {
+        this.shadowRoot.querySelectorAll('[data-popup]').forEach(el => {
+            el.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this._showPopup(el.dataset.popup);
+            });
+        });
     }
 
-    _hAlerts(data) {
-        if (!data || !data.alerts.length) return '';
-        return `<div class="alerts">${data.alerts.map(a => {
-            const c = ALERT_COLORS[a.level] || '#FFC107', ic = ALERT_TYPES[a.type] || 'mdi:alert';
-            return `<div class="alert-chip" style="--ac:${c}"><ha-icon icon="${ic}"></ha-icon><span>${a.type}</span><span class="alert-lvl">${a.level}</span></div>`;
-        }).join('')}</div>`;
-    }
+    // ── Compact View (main card) ───────────────────────────────────
 
-    _hCurrent(state, a) {
+    _hCompactView(name, state, a, rain, alerts) {
         const temp = a.temperature != null ? Math.round(a.temperature) : '--';
         const unit = a.temperature_unit || '°C';
         const feel = a.apparent_temperature != null ? Math.round(a.apparent_temperature) : null;
+        const hasAlerts = alerts && alerts.alerts.length > 0;
+
+        // Compact rain summary
+        let rainSummary = '';
+        if (this._config.show_rain_forecast && rain) {
+            rainSummary = rain.hasRain
+                ? `<span class="chip chip-rain has-rain" data-popup="rain">🌧️ Pluie prévue</span>`
+                : `<span class="chip chip-rain no-rain" data-popup="rain">☀️ Sec</span>`;
+        } else if (this._config.show_rain_forecast && this._config.rain_forecast_entity) {
+            rainSummary = `<span class="chip chip-rain" data-popup="rain">🌧️ N/A</span>`;
+        }
+
+        // Compact hourly summary (next 3 hours)
+        let hourlySummary = '';
+        if (this._config.show_hourly_forecast && this._hourlyForecasts?.length) {
+            const next3 = this._hourlyForecasts.slice(0, 3);
+            hourlySummary = `<span class="chip chip-hourly" data-popup="hourly">${next3.map(f =>
+                `<span class="mini-h">${this._fmtTime(f.datetime).replace(':','h').slice(0,-1)} ${this._icon(f.condition)} ${Math.round(f.temperature)}°</span>`
+            ).join('')}<span class="chip-more">›</span></span>`;
+        }
+
+        // Compact daily summary (next 2 days)
+        let dailySummary = '';
+        if (this._config.show_daily_forecast && this._forecasts?.length) {
+            const next2 = this._forecasts.slice(0, 2);
+            dailySummary = `<span class="chip chip-daily" data-popup="daily">${next2.map(f =>
+                `<span class="mini-d">${this._fmtDay(f.datetime).slice(0,3)} ${this._icon(f.condition)} ${Math.round(f.templow||0)}°/${Math.round(f.temperature)}°</span>`
+            ).join('')}<span class="chip-more">›</span></span>`;
+        }
+
+        // Alert chips
+        let alertChips = '';
+        if (this._config.show_alert && hasAlerts) {
+            alertChips = alerts.alerts.map(al => {
+                const c = ALERT_COLORS[al.level] || '#FFC107';
+                const ic = ALERT_TYPES[al.type] || 'mdi:alert';
+                return `<span class="chip chip-alert" style="--ac:${c}" data-popup="alerts"><ha-icon icon="${ic}"></ha-icon>${al.level}</span>`;
+            }).join('');
+        }
+
+        // Detail summary chips
+        let detailChips = '';
+        if (this._config.show_details) {
+            const chips = [];
+            if (a.humidity != null) chips.push(`💧${a.humidity}%`);
+            if (a.wind_speed != null) chips.push(`💨${Math.round(a.wind_speed)}km/h`);
+            const rainChance = this._detailEntity('rain_chance_entity');
+            if (rainChance) chips.push(`☂${rainChance.state}%`);
+            if (chips.length)
+                detailChips = `<span class="chip chip-details" data-popup="details">${chips.join(' · ')}<span class="chip-more">›</span></span>`;
+        }
+
         return `
-      <div class="current">
-        <div class="current-main">
-          <span class="current-emoji">${this._icon(state)}</span>
-          <div class="current-temp">
-            <span class="temp-val">${temp}</span>
-            <span class="temp-unit">${unit}</span>
-          </div>
+      <div class="compact-card">
+        <div class="compact-header">
+          <span class="compact-name">${name}</span>
+          <span class="compact-source">Météo-France</span>
         </div>
-        <div class="current-info">
-          <div class="condition">${WEATHER_LABELS_FR[state] || state}</div>
-          ${feel != null ? `<div class="feels-like">Ressenti ${feel}${unit}</div>` : ''}
+        <div class="compact-main" data-popup="current">
+          <span class="compact-emoji">${this._icon(state)}</span>
+          <div class="compact-temp-block">
+            <span class="compact-temp">${temp}<span class="compact-unit">${unit}</span></span>
+            <span class="compact-cond">${WEATHER_LABELS_FR[state] || state}${feel != null ? ` · Ressenti ${feel}°` : ''}</span>
+          </div>
+          ${hasAlerts ? `<div class="compact-alert-badge" data-popup="alerts">⚠️</div>` : ''}
+        </div>
+        <div class="compact-chips">
+          ${alertChips}
+          ${rainSummary}
+          ${detailChips}
+          ${hourlySummary}
+          ${dailySummary}
         </div>
       </div>`;
     }
 
-    _hDetails(a) {
+    // ── Popup ──────────────────────────────────────────────────────
+
+    _hPopup(state, a, rain, alerts) {
+        let title = '', content = '';
+        switch(this._activePopup) {
+            case 'current':
+                title = 'Météo actuelle';
+                content = this._popCurrent(state, a);
+                break;
+            case 'details':
+                title = 'Détails';
+                content = this._popDetails(a);
+                break;
+            case 'rain':
+                title = 'Pluie dans l\'heure';
+                content = this._popRain(rain);
+                break;
+            case 'alerts':
+                title = 'Alertes météo';
+                content = this._popAlerts(alerts);
+                break;
+            case 'hourly':
+                title = 'Prévisions horaires';
+                content = this._popHourly();
+                break;
+            case 'daily':
+                title = 'Prévisions journalières';
+                content = this._popDaily();
+                break;
+        }
+        return `
+      <div class="popup-overlay">
+        <div class="popup-content">
+          <div class="popup-header">
+            <span class="popup-title">${title}</span>
+            <span class="popup-close">✕</span>
+          </div>
+          <div class="popup-body">${content}</div>
+        </div>
+      </div>`;
+    }
+
+    _popCurrent(state, a) {
+        const temp = a.temperature != null ? Math.round(a.temperature) : '--';
+        const unit = a.temperature_unit || '°C';
+        const feel = a.apparent_temperature != null ? Math.round(a.apparent_temperature) : null;
+        return `
+      <div class="pop-current">
+        <div class="pop-current-main">
+          <span class="pop-emoji">${this._icon(state)}</span>
+          <div>
+            <div class="pop-temp">${temp}<span class="pop-unit">${unit}</span></div>
+            <div class="pop-cond">${WEATHER_LABELS_FR[state] || state}</div>
+            ${feel != null ? `<div class="pop-feel">Ressenti ${feel}${unit}</div>` : ''}
+          </div>
+        </div>
+        ${this._popDetails(a)}
+      </div>`;
+    }
+
+    _popDetails(a) {
         const d = [];
         if (a.humidity != null) d.push({ i: 'mdi:water-percent', l: 'Humidité', v: `${a.humidity}%` });
         if (a.pressure != null) d.push({ i: 'mdi:gauge', l: 'Pression', v: `${a.pressure} ${a.pressure_unit||'hPa'}` });
@@ -277,18 +416,14 @@ class MeteoFranceCard extends HTMLElement {
         const uv = this._detailEntity('uv_entity');
         if (uv && a.uv_index == null) d.push({ i: 'mdi:sun-wireless', l: 'UV', v: uv.state });
 
-        if (!d.length) return '';
-        return `<div class="details"><div class="details-grid">${d.map(x =>
-            `<div class="detail"><ha-icon icon="${x.i}"></ha-icon><div class="detail-c"><span class="detail-l">${x.l}</span><span class="detail-v">${x.v}</span></div></div>`
-        ).join('')}</div></div>`;
+        if (!d.length) return '<div class="pop-empty">Aucun détail disponible</div>';
+        return `<div class="pop-details-grid">${d.map(x =>
+            `<div class="pop-detail"><ha-icon icon="${x.i}"></ha-icon><div class="pop-detail-c"><span class="pop-detail-l">${x.l}</span><span class="pop-detail-v">${x.v}</span></div></div>`
+        ).join('')}</div>`;
     }
 
-    _hRain(rain) {
-        if (!rain) {
-            if (this._config.rain_forecast_entity)
-                return `<div class="rain-section"><div class="section-t"><ha-icon icon="mdi:weather-rainy"></ha-icon><span>Pluie dans l'heure</span></div><div class="rain-na">Données indisponibles</div></div>`;
-            return '';
-        }
+    _popRain(rain) {
+        if (!rain) return '<div class="pop-empty">Données indisponibles pour la pluie dans l\'heure</div>';
 
         const ref = rain.refTime ? this._fmtTime(rain.refTime) : '';
         const bars = rain.entries.map(e => {
@@ -300,18 +435,18 @@ class MeteoFranceCard extends HTMLElement {
                 case 4: c='var(--rain-heavy,#0D47A1)'; h='100%'; break;
                 default: c='var(--rain-dry,#555)'; h='8%';
             }
-            return `<div class="bar-c" title="${e.description} (${e.minutes} min)"><div class="bar" style="height:${h};background:${c}"></div></div>`;
+            return `<div class="bar-c" title="${e.description} (${e.minutes} min)"><div class="bar" style="height:${h};background:${c}"></div><span class="bar-min">${e.minutes}'</span></div>`;
         }).join('');
 
         const status = rain.hasRain ? '🌧️ Pluie prévue dans l\'heure' : '☀️ Pas de pluie dans l\'heure';
 
         return `
-      <div class="rain-section">
-        <div class="section-t"><ha-icon icon="mdi:weather-rainy"></ha-icon><span>Pluie dans l'heure</span>${ref ? `<span class="section-time">${ref}</span>`:''}</div>
+      <div class="pop-rain">
         <div class="rain-status ${rain.hasRain?'has-rain':'no-rain'}">${status}</div>
+        ${ref ? `<div class="rain-ref">Mis à jour : ${ref}</div>` : ''}
         <div class="rain-tl">
           <div class="bars">${bars}</div>
-          <div class="bar-labels"><span>Maint.</span><span>+15 min</span><span>+30 min</span><span>+45 min</span><span>+60 min</span></div>
+          <div class="bar-labels"><span>Maint.</span><span>+15'</span><span>+30'</span><span>+45'</span><span>+60'</span></div>
         </div>
         <div class="legend">
           <span class="leg"><span class="dot" style="background:var(--rain-dry,#555)"></span>Sec</span>
@@ -322,41 +457,54 @@ class MeteoFranceCard extends HTMLElement {
       </div>`;
     }
 
-    _hHourly() {
-        if (!this._hourlyForecasts?.length) return '';
-        const fc = this._hourlyForecasts.slice(0, this._config.number_of_hourly_forecasts || 6);
-        return `
-      <div class="hourly"><div class="section-t"><ha-icon icon="mdi:clock-outline"></ha-icon><span>Prévisions horaires</span></div>
-        <div class="hourly-scroll">${fc.map(f => {
-            const t = f.temperature != null ? Math.round(f.temperature) : '--';
-            const p = f.precipitation_probability != null ? `${f.precipitation_probability}%` : '';
-            return `<div class="h-item">
-            <span class="h-time">${this._fmtTime(f.datetime)}</span>
-            <span class="h-emoji">${this._icon(f.condition)}</span>
-            <span class="h-temp">${t}°</span>
-            ${p ? `<span class="h-precip">☂ ${p}</span>` : ''}
-          </div>`;
-        }).join('')}</div>
-      </div>`;
+    _popAlerts(alerts) {
+        if (!alerts || !alerts.alerts.length) return '<div class="pop-empty">Aucune alerte en cours</div>';
+        return `<div class="pop-alerts">${alerts.alerts.map(a => {
+            const c = ALERT_COLORS[a.level] || '#FFC107';
+            const ic = ALERT_TYPES[a.type] || 'mdi:alert';
+            return `<div class="pop-alert-item" style="--ac:${c}">
+          <ha-icon icon="${ic}"></ha-icon>
+          <div class="pop-alert-info">
+            <span class="pop-alert-type">${a.type}</span>
+            <span class="pop-alert-level">Vigilance ${a.level}</span>
+          </div>
+          <span class="pop-alert-badge">${a.level}</span>
+        </div>`;
+        }).join('')}</div>`;
     }
 
-    _hDaily() {
-        if (!this._forecasts?.length) return '';
+    _popHourly() {
+        if (!this._hourlyForecasts?.length) return '<div class="pop-empty">Prévisions horaires indisponibles</div>';
+        const fc = this._hourlyForecasts.slice(0, this._config.number_of_hourly_forecasts || 6);
+        return `<div class="pop-hourly-grid">${fc.map(f => {
+            const t = f.temperature != null ? Math.round(f.temperature) : '--';
+            const p = f.precipitation_probability != null ? `${f.precipitation_probability}%` : '';
+            const w = f.wind_speed != null ? `${Math.round(f.wind_speed)} km/h` : '';
+            return `<div class="pop-h-item">
+          <span class="pop-h-time">${this._fmtTime(f.datetime)}</span>
+          <span class="pop-h-emoji">${this._icon(f.condition)}</span>
+          <span class="pop-h-temp">${t}°</span>
+          ${p ? `<span class="pop-h-precip">☂ ${p}</span>` : '<span class="pop-h-precip"></span>'}
+          ${w ? `<span class="pop-h-wind">💨 ${w}</span>` : ''}
+        </div>`;
+        }).join('')}</div>`;
+    }
+
+    _popDaily() {
+        if (!this._forecasts?.length) return '<div class="pop-empty">Prévisions journalières indisponibles</div>';
         const fc = this._forecasts.slice(0, this._config.number_of_daily_forecasts || 5);
-        return `
-      <div class="daily"><div class="section-t"><ha-icon icon="mdi:calendar-week"></ha-icon><span>Prévisions</span></div>
-        ${fc.map(f => {
+        return `<div class="pop-daily-list">${fc.map(f => {
             const hi = f.temperature != null ? Math.round(f.temperature) : '--';
             const lo = f.templow != null ? Math.round(f.templow) : '--';
             const p = f.precipitation_probability != null ? `${f.precipitation_probability}%` : '';
-            return `<div class="d-item">
-            <span class="d-day">${this._fmtDay(f.datetime)}</span>
-            <span class="d-emoji">${this._icon(f.condition)}</span>
-            ${p ? `<span class="d-precip">☂ ${p}</span>` : '<span class="d-precip"></span>'}
-            <span class="d-temps"><span class="d-hi">${hi}°</span><span class="d-lo">${lo}°</span></span>
-          </div>`;
-        }).join('')}
-      </div>`;
+            return `<div class="pop-d-item">
+          <span class="pop-d-day">${this._fmtDay(f.datetime)}</span>
+          <span class="pop-d-emoji">${this._icon(f.condition)}</span>
+          <span class="pop-d-cond">${WEATHER_LABELS_FR[f.condition] || f.condition}</span>
+          ${p ? `<span class="pop-d-precip">☂ ${p}</span>` : '<span class="pop-d-precip"></span>'}
+          <span class="pop-d-temps"><span class="pop-d-hi">${hi}°</span><span class="pop-d-lo">${lo}°</span></span>
+        </div>`;
+        }).join('')}</div>`;
     }
 
     // ── CSS ────────────────────────────────────────────────────────
@@ -368,118 +516,215 @@ class MeteoFranceCard extends HTMLElement {
       --mfa: var(--accent-color, #03A9F4);
       --mfd: var(--divider-color, rgba(0,0,0,0.12));
     }
-    ha-card { overflow:hidden; border-radius: var(--ha-card-border-radius, 12px); }
+    ha-card { overflow:visible; border-radius:var(--ha-card-border-radius, 12px); position:relative; }
 
-    /* Header */
-    .card-header { display:flex; justify-content:space-between; align-items:center; padding:16px 16px 8px; }
-    .header-title { font-size:1.1em; font-weight:600; color:var(--mf1); }
-    .header-sub { font-size:0.75em; font-weight:500; color:var(--mfa); text-transform:uppercase; letter-spacing:0.5px; opacity:0.8; }
+    /* ── Compact Card ── */
+    .compact-card { padding:12px 16px; }
 
-    /* Alerts */
-    .alerts { display:flex; flex-wrap:wrap; gap:6px; padding:0 16px 8px; }
-    .alert-chip {
-      display:inline-flex; align-items:center; gap:4px; padding:4px 10px; border-radius:16px;
-      font-size:0.75em; font-weight:500;
-      background: color-mix(in srgb, var(--ac) 15%, transparent);
-      color: var(--ac); border: 1px solid color-mix(in srgb, var(--ac) 30%, transparent);
+    .compact-header {
+      display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;
     }
-    .alert-chip ha-icon { --mdc-icon-size:14px; }
-    .alert-lvl { font-weight:700; }
+    .compact-name { font-size:0.95em; font-weight:600; color:var(--mf1); }
+    .compact-source { font-size:0.65em; font-weight:500; color:var(--mfa); text-transform:uppercase; letter-spacing:0.5px; opacity:0.7; }
 
-    /* Current */
-    .current { padding:8px 16px 16px; display:flex; align-items:center; gap:16px; }
-    .current-main { display:flex; align-items:center; gap:12px; }
-    .current-emoji { 
-      font-size:48px; 
-      line-height:1; 
-      font-family: "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", sans-serif;
-      display: inline-block;
-      text-rendering: optimizeLegibility;
-      -webkit-font-smoothing: antialiased;
+    .compact-main {
+      display:flex; align-items:center; gap:12px; cursor:pointer;
+      padding:8px 10px; border-radius:12px; transition:background 0.2s;
+      position:relative;
     }
-    .current-temp { display:flex; align-items:flex-start; }
-    .temp-val { font-size:3em; font-weight:300; line-height:1; color:var(--mf1); }
-    .temp-unit { font-size:1.2em; color:var(--mf2); margin-top:6px; margin-left:2px; }
-    .current-info { flex:1; text-align:right; }
-    .condition { font-size:1em; font-weight:500; color:var(--mf1); }
-    .feels-like { font-size:0.85em; color:var(--mf2); margin-top:2px; }
+    .compact-main:hover { background:color-mix(in srgb, var(--mf1) 5%, transparent); }
+    .compact-main:active { background:color-mix(in srgb, var(--mf1) 8%, transparent); }
 
-    /* Details */
-    .details { padding:0 16px 12px; }
-    .details-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; }
-    .detail {
-      display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:8px;
-      background: color-mix(in srgb, var(--mf1) 4%, transparent);
+    .compact-emoji {
+      font-size:36px; line-height:1;
+      font-family:"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji",sans-serif;
     }
-    .detail ha-icon { --mdc-icon-size:18px; color:var(--mf2); flex-shrink:0; }
-    .detail-c { display:flex; flex-direction:column; min-width:0; }
-    .detail-l { font-size:0.7em; color:var(--mf2); text-transform:uppercase; letter-spacing:0.3px; }
-    .detail-v { font-size:0.85em; font-weight:500; color:var(--mf1); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .compact-temp-block { display:flex; flex-direction:column; }
+    .compact-temp { font-size:1.8em; font-weight:300; line-height:1; color:var(--mf1); }
+    .compact-unit { font-size:0.45em; color:var(--mf2); vertical-align:super; }
+    .compact-cond { font-size:0.78em; color:var(--mf2); margin-top:2px; }
 
-    /* Section titles */
-    .section-t { display:flex; align-items:center; gap:6px; padding-bottom:8px; font-size:0.85em; font-weight:600; color:var(--mf2); }
-    .section-t ha-icon { --mdc-icon-size:18px; }
-    .section-time { margin-left:auto; font-weight:400; font-size:0.9em; opacity:0.7; }
-
-    /* Rain */
-    .rain-section {
-      padding:12px 16px; margin:0 12px 12px; border-radius:12px;
-      background: color-mix(in srgb, var(--mfa) 6%, transparent);
-      border: 1px solid color-mix(in srgb, var(--mfa) 12%, transparent);
+    .compact-alert-badge {
+      position:absolute; right:8px; top:50%; transform:translateY(-50%);
+      font-size:18px; cursor:pointer; animation:pulse 2s infinite;
     }
-    .rain-status { font-size:0.85em; font-weight:500; margin-bottom:10px; }
+    @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.5;} }
+
+    /* ── Chips row ── */
+    .compact-chips {
+      display:flex; flex-wrap:wrap; gap:6px; margin-top:8px;
+    }
+    .chip {
+      display:inline-flex; align-items:center; gap:4px; padding:4px 10px;
+      border-radius:20px; font-size:0.72em; font-weight:500; cursor:pointer;
+      transition:all 0.2s; user-select:none;
+    }
+    .chip:hover { filter:brightness(0.95); transform:translateY(-1px); }
+    .chip:active { transform:translateY(0); }
+
+    .chip-rain {
+      background:color-mix(in srgb, var(--mfa) 10%, transparent);
+      color:var(--mfa); border:1px solid color-mix(in srgb, var(--mfa) 20%, transparent);
+    }
+    .chip-rain.has-rain {
+      background:color-mix(in srgb, var(--warning-color,#FF9800) 12%, transparent);
+      color:var(--warning-color,#FF9800); border-color:color-mix(in srgb, var(--warning-color,#FF9800) 25%, transparent);
+    }
+    .chip-rain.no-rain {
+      background:color-mix(in srgb, var(--success-color,#4CAF50) 10%, transparent);
+      color:var(--success-color,#4CAF50); border-color:color-mix(in srgb, var(--success-color,#4CAF50) 20%, transparent);
+    }
+    .chip-alert {
+      background:color-mix(in srgb, var(--ac) 15%, transparent);
+      color:var(--ac); border:1px solid color-mix(in srgb, var(--ac) 30%, transparent);
+    }
+    .chip-alert ha-icon { --mdc-icon-size:13px; }
+
+    .chip-details {
+      background:color-mix(in srgb, var(--mf1) 5%, transparent);
+      color:var(--mf2); border:1px solid color-mix(in srgb, var(--mf1) 8%, transparent);
+    }
+    .chip-hourly, .chip-daily {
+      background:color-mix(in srgb, var(--mf1) 4%, transparent);
+      color:var(--mf2); border:1px solid color-mix(in srgb, var(--mf1) 8%, transparent);
+      gap:8px;
+    }
+    .mini-h, .mini-d { white-space:nowrap; font-size:0.95em; }
+    .mini-h + .mini-h, .mini-d + .mini-d { padding-left:6px; border-left:1px solid var(--mfd); }
+
+    .chip-more { font-size:1.2em; opacity:0.5; margin-left:2px; font-weight:700; }
+
+    /* ── Popup Overlay ── */
+    .popup-overlay {
+      position:fixed; top:0; left:0; right:0; bottom:0;
+      background:rgba(0,0,0,0.5); z-index:999;
+      display:flex; align-items:center; justify-content:center;
+      animation:fadeIn 0.2s ease;
+      backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px);
+    }
+    .popup-overlay.closing { animation:fadeOut 0.2s ease forwards; }
+
+    .popup-content {
+      background:var(--card-background-color, #fff);
+      border-radius:16px; width:90%; max-width:380px; max-height:80vh;
+      overflow:hidden; display:flex; flex-direction:column;
+      box-shadow:0 8px 32px rgba(0,0,0,0.25);
+      animation:slideUp 0.25s ease;
+    }
+    .popup-content.closing { animation:slideDown 0.2s ease forwards; }
+
+    @keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
+    @keyframes fadeOut { from{opacity:1;} to{opacity:0;} }
+    @keyframes slideUp { from{transform:translateY(30px);opacity:0;} to{transform:translateY(0);opacity:1;} }
+    @keyframes slideDown { from{transform:translateY(0);opacity:1;} to{transform:translateY(30px);opacity:0;} }
+
+    .popup-header {
+      display:flex; justify-content:space-between; align-items:center;
+      padding:16px 20px 12px; border-bottom:1px solid var(--mfd);
+    }
+    .popup-title { font-size:1em; font-weight:600; color:var(--mf1); }
+    .popup-close {
+      width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+      cursor:pointer; font-size:14px; color:var(--mf2);
+      background:color-mix(in srgb, var(--mf1) 6%, transparent);
+      transition:background 0.15s;
+    }
+    .popup-close:hover { background:color-mix(in srgb, var(--mf1) 12%, transparent); }
+
+    .popup-body { padding:16px 20px 20px; overflow-y:auto; }
+
+    .pop-empty { font-size:0.85em; color:var(--mf2); font-style:italic; text-align:center; padding:20px 0; }
+
+    /* ── Popup: Current ── */
+    .pop-current-main { display:flex; align-items:center; gap:16px; margin-bottom:16px; padding-bottom:16px; border-bottom:1px solid var(--mfd); }
+    .pop-emoji {
+      font-size:48px; line-height:1;
+      font-family:"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji",sans-serif;
+    }
+    .pop-temp { font-size:2.5em; font-weight:300; line-height:1; color:var(--mf1); }
+    .pop-unit { font-size:0.4em; color:var(--mf2); vertical-align:super; }
+    .pop-cond { font-size:0.95em; font-weight:500; color:var(--mf1); margin-top:4px; }
+    .pop-feel { font-size:0.82em; color:var(--mf2); margin-top:2px; }
+
+    /* ── Popup: Details grid ── */
+    .pop-details-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; }
+    .pop-detail {
+      display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:10px;
+      background:color-mix(in srgb, var(--mf1) 4%, transparent);
+    }
+    .pop-detail ha-icon { --mdc-icon-size:18px; color:var(--mf2); flex-shrink:0; }
+    .pop-detail-c { display:flex; flex-direction:column; min-width:0; }
+    .pop-detail-l { font-size:0.65em; color:var(--mf2); text-transform:uppercase; letter-spacing:0.3px; }
+    .pop-detail-v { font-size:0.85em; font-weight:500; color:var(--mf1); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+    /* ── Popup: Rain ── */
+    .pop-rain {}
+    .rain-status { font-size:0.9em; font-weight:500; margin-bottom:8px; text-align:center; }
     .rain-status.no-rain { color:var(--success-color,#4CAF50); }
     .rain-status.has-rain { color:var(--warning-color,#FF9800); }
-    .rain-tl { margin-bottom:8px; }
-    .bars { display:flex; gap:2px; height:60px; align-items:flex-end; padding:0 4px; }
-    .bar-c { flex:1; height:100%; display:flex; align-items:flex-end; cursor:pointer; }
+    .rain-ref { font-size:0.72em; color:var(--mf2); text-align:center; margin-bottom:12px; }
+    .rain-tl { margin-bottom:12px; }
+    .bars { display:flex; gap:3px; height:70px; align-items:flex-end; padding:0 4px; }
+    .bar-c { flex:1; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; cursor:pointer; gap:3px; }
     .bar { width:100%; border-radius:3px 3px 0 0; transition:height 0.3s ease; min-height:4px; }
+    .bar-min { font-size:0.55em; color:var(--mf2); }
     .bar-c:hover .bar { opacity:0.8; filter:brightness(1.1); }
     .bar-labels {
       display:flex; justify-content:space-between; padding:6px 0 0;
       font-size:0.65em; color:var(--mf2); border-top:1px solid var(--mfd); margin-top:4px;
     }
-    .rain-na { font-size:0.85em; color:var(--mf2); font-style:italic; padding:8px 0; }
     .legend { display:flex; justify-content:center; gap:12px; font-size:0.7em; color:var(--mf2); }
     .leg { display:flex; align-items:center; gap:4px; }
     .dot { width:8px; height:8px; border-radius:2px; display:inline-block; }
 
-    /* Hourly */
-    .hourly { padding:12px 16px; border-top:1px solid var(--mfd); }
-    .hourly-scroll { display:flex; gap:4px; overflow-x:auto; padding-bottom:4px; scrollbar-width:thin; }
-    .hourly-scroll::-webkit-scrollbar { height:4px; }
-    .hourly-scroll::-webkit-scrollbar-thumb { background:var(--mfd); border-radius:2px; }
-    .h-item {
-      display:flex; flex-direction:column; align-items:center; gap:4px;
-      min-width:56px; padding:8px 6px; border-radius:10px;
-      background: color-mix(in srgb, var(--mf1) 3%, transparent); flex-shrink:0;
+    /* ── Popup: Alerts ── */
+    .pop-alerts { display:flex; flex-direction:column; gap:8px; }
+    .pop-alert-item {
+      display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:10px;
+      background:color-mix(in srgb, var(--ac) 8%, transparent);
+      border:1px solid color-mix(in srgb, var(--ac) 20%, transparent);
     }
-    .h-time { font-size:0.72em; font-weight:500; color:var(--mf2); }
-    .h-emoji { 
-      font-size:22px; 
-      line-height:1; 
-      font-family: "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", sans-serif;
-      display: inline-block;
+    .pop-alert-item ha-icon { --mdc-icon-size:22px; color:var(--ac); }
+    .pop-alert-info { display:flex; flex-direction:column; flex:1; }
+    .pop-alert-type { font-size:0.85em; font-weight:600; color:var(--mf1); }
+    .pop-alert-level { font-size:0.75em; color:var(--mf2); }
+    .pop-alert-badge {
+      padding:3px 10px; border-radius:12px; font-size:0.72em; font-weight:700;
+      background:var(--ac); color:#fff;
     }
-    .h-temp { font-size:0.9em; font-weight:600; color:var(--mf1); }
-    .h-precip { font-size:0.65em; color:var(--mf2); }
 
-    /* Daily */
-    .daily { padding:12px 16px 16px; border-top:1px solid var(--mfd); }
-    .d-item { display:flex; align-items:center; gap:8px; padding:7px 0; }
-    .d-item:not(:last-child) { border-bottom:1px solid color-mix(in srgb, var(--mfd) 50%, transparent); }
-    .d-day { font-size:0.85em; font-weight:500; color:var(--mf1); width:80px; flex-shrink:0; text-transform:capitalize; }
-    .d-emoji { 
-      font-size:20px; 
-      line-height:1; 
-      flex-shrink:0; 
-      font-family: "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", sans-serif;
-      display: inline-block;
+    /* ── Popup: Hourly ── */
+    .pop-hourly-grid { display:flex; flex-direction:column; gap:4px; }
+    .pop-h-item {
+      display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:8px;
+      background:color-mix(in srgb, var(--mf1) 3%, transparent);
     }
-    .d-precip { font-size:0.75em; color:var(--mf2); width:48px; flex-shrink:0; }
-    .d-temps { margin-left:auto; display:flex; gap:6px; font-size:0.9em; flex-shrink:0; }
-    .d-hi { font-weight:600; color:var(--mf1); width:32px; text-align:right; }
-    .d-lo { font-weight:400; color:var(--mf2); width:32px; text-align:right; }
+    .pop-h-time { font-size:0.8em; font-weight:600; color:var(--mf2); width:45px; }
+    .pop-h-emoji {
+      font-size:20px; line-height:1;
+      font-family:"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji",sans-serif;
+    }
+    .pop-h-temp { font-size:0.95em; font-weight:600; color:var(--mf1); width:35px; }
+    .pop-h-precip { font-size:0.75em; color:var(--mf2); width:42px; }
+    .pop-h-wind { font-size:0.72em; color:var(--mf2); margin-left:auto; }
+
+    /* ── Popup: Daily ── */
+    .pop-daily-list { display:flex; flex-direction:column; }
+    .pop-d-item {
+      display:flex; align-items:center; gap:8px; padding:10px 0;
+      border-bottom:1px solid color-mix(in srgb, var(--mfd) 50%, transparent);
+    }
+    .pop-d-item:last-child { border-bottom:none; }
+    .pop-d-day { font-size:0.82em; font-weight:600; color:var(--mf1); width:75px; flex-shrink:0; text-transform:capitalize; }
+    .pop-d-emoji {
+      font-size:20px; line-height:1; flex-shrink:0;
+      font-family:"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji",sans-serif;
+    }
+    .pop-d-cond { font-size:0.75em; color:var(--mf2); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .pop-d-precip { font-size:0.72em; color:var(--mf2); width:42px; flex-shrink:0; }
+    .pop-d-temps { display:flex; gap:6px; font-size:0.85em; flex-shrink:0; margin-left:auto; }
+    .pop-d-hi { font-weight:600; color:var(--mf1); }
+    .pop-d-lo { font-weight:400; color:var(--mf2); }
   `;}
 }
 
@@ -548,7 +793,7 @@ window.customCards = window.customCards || [];
 window.customCards.push({
     type: 'meteo-france-card',
     name: 'Carte Météo France',
-    description: 'Carte météo avec données Météo-France et pluie dans l\'heure',
+    description: 'Carte météo compacte avec données Météo-France — cliquez pour les détails',
     preview: true,
 });
 
