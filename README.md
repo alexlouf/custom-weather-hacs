@@ -7,15 +7,17 @@ Carte Lovelace personnalisée pour Home Assistant affichant les données de l'in
 
 ## ✨ Fonctionnalités
 
-- **Météo actuelle** — Température, ressenti, condition, icône
-- **Pluie dans l'heure** — Timeline visuelle par tranche de 5 min avec légende d'intensité
-- **Alertes météo** — Chips colorés (Jaune/Orange/Rouge) par type de vigilance
-- **Détails** — Humidité, pression, vent, rafales, visibilité, UV, nébulosité, point de rosée
-- **Entités Météo-France** — Risque pluie/gel/neige depuis les capteurs dédiés
-- **Prévisions horaires** — Défilement horizontal avec icônes, températures, probabilité de pluie
-- **Prévisions journalières** — 5 jours avec min/max et probabilité de pluie
-- **Éditeur visuel** — Configuration complète via l'UI de Lovelace
-- **Thème adaptatif** — S'adapte automatiquement au thème clair/sombre de HA
+- **🎯 Interface compacte avec popups interactives** — Affichage condensé avec toutes les informations accessibles en un clic
+- **☀️ Météo actuelle** — Température, ressenti, condition avec icône emoji
+- **🌧️ Pluie dans l'heure** — Timeline visuelle par tranche de 5 min avec légende d'intensité
+- **🚨 Alertes météo** — Chips colorés (Jaune/Orange/Rouge) par type de vigilance
+- **📊 Détails complets** — Humidité, pression, vent, rafales, visibilité, UV, nébulosité, point de rosée
+- **🎲 Entités Météo-France** — Risque pluie/gel/neige depuis les capteurs dédiés
+- **⏰ Prévisions horaires** — Jusqu'à 24h avec icônes, températures, probabilité de pluie et vent
+- **📅 Prévisions journalières** — Jusqu'à 7 jours avec min/max et probabilité de pluie
+- **🎨 Éditeur visuel** — Configuration complète via l'UI de Lovelace
+- **🌓 Thème adaptatif** — S'adapte automatiquement au thème clair/sombre de HA
+- **⚡ Optimisé** — Pas de clignotement lors des rafraîchissements même avec popup ouverte
 
 ## 📋 Prérequis
 
@@ -35,6 +37,34 @@ Entités utilisées :
 | `sensor.ma_ville_freeze_chance` | Probabilité de gel | Optionnel |
 | `sensor.ma_ville_snow_chance` | Probabilité de neige | Optionnel |
 | `sensor.ma_ville_uv` | Indice UV | Optionnel |
+
+## 🎯 Interface Interactive
+
+La carte v2.0 utilise une **interface compacte** qui économise l'espace sur votre dashboard tout en gardant toutes les informations facilement accessibles :
+
+### Vue compacte
+- **En-tête** : Nom de la localité + badge "Météo-France"
+- **Zone principale** : Grande icône météo + température actuelle + ressenti (cliquable)
+- **Chips interactifs** : Ligne de chips colorés pour accès rapide
+  - 🚨 **Alertes** (si actives) — Affiche le niveau de vigilance
+  - 🌧️ **Pluie** — Statut "Pluie prévue" ou "Sec"
+  - 📊 **Détails** — Aperçu rapide (humidité, vent, risque pluie)
+  - ⏰ **Prévisions horaires** — 3 prochaines heures
+  - 📅 **Prévisions journalières** — 2 prochains jours
+
+### Popups détaillées
+**Cliquez sur n'importe quel élément** pour ouvrir une popup avec les détails complets :
+
+- **Météo actuelle** → Température, ressenti, condition + tous les détails météo
+- **Détails** → Grille complète avec humidité, pression, vent, rafales, visibilité, UV, nébulosité, point de rosée
+- **Pluie** → Timeline interactive minute par minute avec graphique en barres
+- **Alertes** → Liste complète des vigilances avec icônes et niveaux
+- **Horaires** → Prévisions heure par heure (jusqu'à 24h)
+- **Journalières** → Prévisions jour par jour (jusqu'à 7 jours)
+
+**Fermeture** : Cliquez sur la croix, en dehors de la popup, ou appuyez sur Échap.
+
+> 💡 **Astuce** : Les popups ne clignotent plus lors des rafraîchissements automatiques des données — vous pouvez consulter les détails sans interruption !
 
 ## 🚀 Installation
 
@@ -125,24 +155,48 @@ number_of_daily_forecasts: 5
 
 ## 🌧️ Pluie dans l'heure
 
-La section "Pluie dans l'heure" affiche une timeline avec :
+Dans la vue compacte, un **chip coloré** indique l'état :
+- 🌧️ **"Pluie prévue"** (orange) — De la pluie est attendue dans l'heure
+- ☀️ **"Sec"** (vert) — Pas de pluie prévue
+
+**Cliquez sur le chip** pour ouvrir la popup détaillée avec la timeline interactive :
 - **Barres verticales** : intensité de pluie par tranche de 5-10 min
-- **Légende** : Sec / Faible / Modérée / Forte
-- **Status** : indicateur texte pluie prévue ou non
-- **Heure de référence** : horodatage de la prévision
+- **Graduation temporelle** : Maintenant, +15', +30', +45', +60'
+- **Légende colorée** : Sec (gris) / Faible (bleu clair) / Modérée (bleu) / Forte (bleu foncé)
+- **Statut** : indicateur texte clair
+- **Heure de référence** : horodatage de la dernière mise à jour
 
 > **Note** : La disponibilité de cette donnée dépend de votre localisation. Vérifiez sur [meteofrance.com](https://meteofrance.com) que "Pluie dans l'heure" est disponible pour votre ville.
 
 ## 🚨 Alertes
 
-Les alertes sont affichées sous forme de chips colorés selon le niveau de vigilance Météo-France :
+Dans la vue compacte, les alertes actives sont affichées sous forme de **chips colorés** avec icône selon le niveau de vigilance Météo-France :
 - 🟡 **Jaune** — Soyez attentif
 - 🟠 **Orange** — Soyez très vigilant
 - 🔴 **Rouge** — Vigilance absolue
 
-Types : Vent violent, Pluie-inondation, Orages, Inondation, Neige-verglas, Canicule, Grand Froid, Avalanches, Vagues-submersion.
+Un **badge ⚠️ animé** apparaît également sur la zone de météo principale si des alertes sont en cours.
+
+**Cliquez sur un chip d'alerte** pour ouvrir la popup détaillée listant toutes les vigilances actives avec :
+- Icône spécifique au type de risque
+- Type d'alerte (Vent violent, Pluie-inondation, Orages, etc.)
+- Niveau de vigilance avec badge coloré
+
+Types d'alertes supportés : Vent violent, Pluie-inondation, Orages, Inondation, Neige-verglas, Canicule, Grand Froid, Avalanches, Vagues-submersion.
 
 ## 📝 Changelog
+
+### v2.0.0 (Actuelle)
+- 🎯 **Refonte complète** : interface compacte avec système de popups interactives
+- 🎨 Nouvelle interface avec chips cliquables pour un affichage condensé
+- ✨ 6 popups détaillées : météo actuelle, détails, pluie, alertes, horaires, journalières
+- 🌈 Icônes emoji pour toutes les conditions météo (plus moderne)
+- 🔄 Animations fluides d'ouverture/fermeture des popups
+- ⚡ Correction du bug de clignotement lors des rafraîchissements
+- 🎯 Les popups restent stables pendant les mises à jour automatiques
+- 📱 Design optimisé pour mobile et desktop
+- 🎨 Amélioration du contraste et de la lisibilité
+- 🖼️ Backdrop blur pour meilleure visibilité des popups
 
 ### v1.0.0
 - Version initiale
