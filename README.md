@@ -4,7 +4,6 @@
 
 Carte Lovelace personnalisée pour Home Assistant affichant les données de l'intégration [Météo-France](https://www.home-assistant.io/integrations/meteo_france/), incluant la **pluie dans l'heure** avec une timeline visuelle.
 
-![Preview](docs/preview.png)
 
 ## ✨ Fonctionnalités
 
