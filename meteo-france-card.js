@@ -389,7 +389,14 @@ class MeteoFranceCard extends HTMLElement {
     /* Current */
     .current { padding:8px 16px 16px; display:flex; align-items:center; gap:16px; }
     .current-main { display:flex; align-items:center; gap:12px; }
-    .current-emoji { font-size:48px; line-height:1; }
+    .current-emoji { 
+      font-size:48px; 
+      line-height:1; 
+      font-family: "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", sans-serif;
+      display: inline-block;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+    }
     .current-temp { display:flex; align-items:flex-start; }
     .temp-val { font-size:3em; font-weight:300; line-height:1; color:var(--mf1); }
     .temp-unit { font-size:1.2em; color:var(--mf2); margin-top:6px; margin-left:2px; }
@@ -448,7 +455,12 @@ class MeteoFranceCard extends HTMLElement {
       background: color-mix(in srgb, var(--mf1) 3%, transparent); flex-shrink:0;
     }
     .h-time { font-size:0.72em; font-weight:500; color:var(--mf2); }
-    .h-emoji { font-size:22px; line-height:1; }
+    .h-emoji { 
+      font-size:22px; 
+      line-height:1; 
+      font-family: "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", sans-serif;
+      display: inline-block;
+    }
     .h-temp { font-size:0.9em; font-weight:600; color:var(--mf1); }
     .h-precip { font-size:0.65em; color:var(--mf2); }
 
@@ -457,7 +469,13 @@ class MeteoFranceCard extends HTMLElement {
     .d-item { display:flex; align-items:center; gap:8px; padding:7px 0; }
     .d-item:not(:last-child) { border-bottom:1px solid color-mix(in srgb, var(--mfd) 50%, transparent); }
     .d-day { font-size:0.85em; font-weight:500; color:var(--mf1); width:80px; flex-shrink:0; text-transform:capitalize; }
-    .d-emoji { font-size:20px; line-height:1; flex-shrink:0; }
+    .d-emoji { 
+      font-size:20px; 
+      line-height:1; 
+      flex-shrink:0; 
+      font-family: "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", sans-serif;
+      display: inline-block;
+    }
     .d-precip { font-size:0.75em; color:var(--mf2); width:48px; flex-shrink:0; }
     .d-temps { margin-left:auto; display:flex; gap:6px; font-size:0.9em; flex-shrink:0; }
     .d-hi { font-weight:600; color:var(--mf1); width:32px; text-align:right; }
