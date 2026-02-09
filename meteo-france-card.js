@@ -113,7 +113,10 @@ class MeteoFranceCard extends HTMLElement {
             this._subscribeForecast('daily');
             this._subscribeForecast('hourly');
         }
-        this._render();
+        // Don't re-render if popup is active to prevent flickering and losing event listeners
+        if (!this._activePopup) {
+            this._render();
+        }
     }
 
     async _subscribeForecast(type) {
@@ -122,7 +125,10 @@ class MeteoFranceCard extends HTMLElement {
             const sub = await this._hass.connection.subscribeMessage((result) => {
                 if (type === 'daily') this._forecasts = result?.forecast || [];
                 else this._hourlyForecasts = result?.forecast || [];
-                this._render();
+                // Don't re-render if popup is active to prevent flickering
+                if (!this._activePopup) {
+                    this._render();
+                }
             }, {
                 type: 'weather/subscribe_forecast',
                 forecast_type: type,
@@ -189,6 +195,7 @@ class MeteoFranceCard extends HTMLElement {
         if (overlay) overlay.classList.add('closing');
         setTimeout(() => {
             this._activePopup = null;
+            // Force re-render to update with any data that changed while popup was open
             this._render();
         }, 200);
     }
